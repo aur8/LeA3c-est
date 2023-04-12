@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 # ---Choose project name---
-project(OpenGL-TPs-Template)
+project(Papeterie)
 
 # ---Add p6 library---
 include(FetchContent)
@@ -35,6 +35,7 @@ function(add_exercise EXERCISE_NAME)
     target_sources(${TARGET_NAME} PRIVATE ${EXERCISE_FILES} ${COMMON_FILES})
     target_include_directories(${TARGET_NAME} PRIVATE ${EXERCISE_FILES} src-common)
 
+
     # ---Link p6 library---
     target_link_libraries(${TARGET_NAME} PRIVATE p6::p6)
 
@@ -47,5 +48,4 @@ function(add_exercise EXERCISE_NAME)
     Cool__target_copy_folder(${TARGET_NAME} ${EXERCISE_NAME}/shaders shaders)
 endfunction(add_exercise)
 
-add_exercise(TP3_exo1_triangle_blanc)
-add_exercise(TP3_exo2_triangle_couleurs)
+add_exercise(src)
