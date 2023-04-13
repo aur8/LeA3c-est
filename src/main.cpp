@@ -12,10 +12,12 @@
 
 // initialisation magnitude
 
-float Boid::cohesion_magnitude = 0.5f;
-float Boid::alignment_magnitude = 0.5f;
-float Boid::separation_magnitude = 0.5f;
-float Boid::distance_max = 0.5f;
+float      Boid::cohesion_magnitude   = 0.5f;
+float      Boid::alignment_magnitude  = 0.5f;
+float      Boid::separation_magnitude = 0.5f;
+float      Boid::distance_max         = 0.5f;
+float      Boid::speed_factor         = 0.1f;
+static int boid_number                = 200;
 
 int main() {
   // { // Run the tests
@@ -35,11 +37,6 @@ int main() {
 
   std::vector<Boid> boids(100);
 
-  // initialisation des positions de boid
-  for (auto &boid : boids) {
-    boid.set_pos(
-        glm::vec2(p6::random::number(-2, 2), p6::random::number(-1, 1)));
-  }
   ///////////////////////////
   // boids 3D avec OPENGL //
   /////////////////////////
@@ -152,8 +149,16 @@ int main() {
     shader.use();
     glBindVertexArray(vao);
 
+    std::vector<Boid> boids(boid_number);
     for (size_t i = 1; i < 32; i++) {
 
+    // initialisation des positions de boid
+    for (auto& boid : boids)
+    {
+        boid.set_pos(
+            glm::vec3(p6::random::number(-2, 2), p6::random::number(-1, 1), p6::random::number(-2, 0))
+        );
+    }
       MVMatrix =
           glm::translate(glm::mat4{1.f}, {0.f, 0.f, -5.f}); // Translation
       //   MVMatrix = glm::rotate(MVMatrix, ctx.time(),
@@ -175,7 +180,6 @@ int main() {
       glDrawArrays(GL_TRIANGLES, 0, vertices.size());
     }
 
-    glBindVertexArray(0);
 
     glBindVertexArray(0);
   };
