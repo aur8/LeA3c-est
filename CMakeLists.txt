@@ -35,7 +35,6 @@ function(add_exercise EXERCISE_NAME)
     target_sources(${TARGET_NAME} PRIVATE ${EXERCISE_FILES} ${COMMON_FILES})
     target_include_directories(${TARGET_NAME} PRIVATE ${EXERCISE_FILES} src-common)
 
-
     # ---Link p6 library---
     target_link_libraries(${TARGET_NAME} PRIVATE p6::p6)
 
