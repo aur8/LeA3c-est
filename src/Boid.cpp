@@ -12,8 +12,8 @@
 void Boid::update_position(float delta_time, float ratio)
 {
     // apply velocity to the position
-    m_pos.x += m_vel.x * 2 * delta_time;
-    m_pos.y += m_vel.y * 2 * delta_time;
+    m_pos.x += m_vel.x * delta_time;
+    m_pos.y += m_vel.y * delta_time;
 
     // move position if boid not in world
     m_pos.x = stay_in_world(m_pos.x, ratio, -ratio);
@@ -23,7 +23,7 @@ void Boid::update_position(float delta_time, float ratio)
 void Boid::update_velocity()
 {
     // add a speed factor to direction
-    m_vel = glm::vec2(0.1, 0.1) * glm::normalize(m_direction);
+    m_vel = glm::vec2(speed_factor) * glm::normalize(m_direction);
 }
 
 void Boid::update_direction(const std::vector<Boid>& boids)
@@ -112,10 +112,6 @@ glm::vec2 Boid::alignment(const std::vector<Boid>& boids)
         ali += other.get_direction();
     }
 
-    // // divise by the number of neighbors
-    // ali.x = ali.x / (float)neighbors.size();
-    // ali.y = ali.y / (float)neighbors.size();
-
     return glm::normalize(ali);
 }
 
@@ -144,4 +140,9 @@ glm::vec2 Boid::separation(const std::vector<Boid>& boids)
         }
     }
     return glm::normalize(sep);
+}
+
+void Boid::display()
+{
+    // à compléter
 }

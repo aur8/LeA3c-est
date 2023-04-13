@@ -5,33 +5,22 @@
 #include "glm/fwd.hpp"
 #include "p6/p6.h"
 
-// #define DOCTEST_CONFIG_IMPLEMENT
-// #include "doctest/doctest.h"
-
 // initialisation magnitude
 
-float Boid::cohesion_magnitude   = 0.5f;
-float Boid::alignment_magnitude  = 0.5f;
-float Boid::separation_magnitude = 0.5f;
-float Boid::distance_max         = 0.5f;
+float      Boid::cohesion_magnitude   = 0.5f;
+float      Boid::alignment_magnitude  = 0.5f;
+float      Boid::separation_magnitude = 0.5f;
+float      Boid::distance_max         = 0.5f;
+float      Boid::speed_factor         = 0.1f;
+static int boid_number                = 200;
 
 int main(int argc, char* argv[])
 {
-    // { // Run the tests
-    //     if (doctest::Context{}.run() != 0)
-    //         return EXIT_FAILURE;
-    //     // The CI does not have a GPU so it cannot run the rest of the code.
-    //     const bool no_gpu_available =
-    //         argc >= 2 && strcmp(argv[1], "-nogpu") == 0; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-    //     if (no_gpu_available)
-    //         return EXIT_SUCCESS;
-    // }
-
     // Actual app
     auto ctx = p6::Context{{.title = "ProgS4"}};
     ctx.maximize_window();
 
-    std::vector<Boid> boids(100);
+    std::vector<Boid> boids(boid_number);
 
     // initialisation des positions de boid
     for (auto& boid : boids)
@@ -45,21 +34,15 @@ int main(int argc, char* argv[])
     ctx.update = [&]() {
         // Clear the background with a fading effect
         ctx.use_stroke = false;
-        ctx.fill       = {0.2f, 0.1f, 0.3f, 0.1f};
-        // ctx.fill = {p6::random::number(-1, 0.5), p6::random::number(-1, 0.5),
-        //             p6::random::number(-1, 0.5)}; // random
-        ctx.rectangle(p6::FullScreen{});
-
-        // ctx.background({0.2f, 0.1f, 0.3f});
-        // ctx.fill = {1.f, 0.7f, 0.2f};
-        // ctx.fill = {p6::random::number(0.5, 1), p6::random::number(0.5, 1),
-        //             p6::random::number(0.5, 1)}; // random
+        ctx.background({0.2f, 0.1f, 0.3f});
 
         ImGui::Begin("Test");
         ImGui::SliderFloat("Cohesion Magnitude", &Boid::cohesion_magnitude, 0.f, 1.f);
         ImGui::SliderFloat("Aligment Magnitude", &Boid::alignment_magnitude, 0.f, 1.f);
         ImGui::SliderFloat("Separation Magnitude", &Boid::separation_magnitude, 0.f, 1.f);
         ImGui::SliderFloat("Distance with neighbors", &Boid::distance_max, 0.f, 1.f);
+        ImGui::SliderFloat("Speed", &Boid::speed_factor, 0.f, 2.f);
+        ImGui::SliderInt("Number of boids", &boid_number, 5, 200); // à faire marcher
         ImGui::End();
 
         for (auto& boid : boids)

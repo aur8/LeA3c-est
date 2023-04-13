@@ -10,7 +10,6 @@ private:
     // attributes
     glm::vec2 m_pos;       // position
     glm::vec2 m_vel;       // velocity
-    glm::vec2 m_acc;       // acceleration
     glm::vec2 m_direction; // direction
 
 public:
@@ -18,12 +17,13 @@ public:
     static float alignment_magnitude;
     static float separation_magnitude;
     static float distance_max;
+    static float speed_factor;
 
     /* CONSTRUCTORS */
     Boid()
-        : m_pos(0), m_vel(0), m_acc(0), m_direction(p6::random::direction()){};
+        : m_pos(0), m_vel(0), m_direction(p6::random::direction()){};
     Boid(glm::vec2 position)
-        : m_pos(position), m_vel(0), m_acc(0), m_direction(p6::random::direction()){};
+        : m_pos(position), m_vel(0), m_direction(p6::random::direction()){};
 
     /* DESTRUCTOR */
     ~Boid() = default;
@@ -35,6 +35,9 @@ public:
 
     /* SETTEUR */
     void set_pos(const glm::vec2 position) { m_pos = position; }
+
+    /* DISPLAY */
+    void display();
 
     /* BOID VELOCITY */
 
