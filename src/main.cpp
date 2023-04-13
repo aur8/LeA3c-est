@@ -12,30 +12,18 @@
 
 // initialisation magnitude
 
-float      Boid::cohesion_magnitude   = 0.5f;
-float      Boid::alignment_magnitude  = 0.5f;
-float      Boid::separation_magnitude = 0.5f;
-float      Boid::distance_max         = 0.5f;
-float      Boid::speed_factor         = 0.1f;
-static int boid_number                = 200;
+float Boid::cohesion_magnitude = 0.5f;
+float Boid::alignment_magnitude = 0.5f;
+float Boid::separation_magnitude = 0.5f;
+float Boid::distance_max = 0.5f;
+float Boid::speed_factor = 0.5f;
+static int boid_number = 100;
 
 int main() {
-  // { // Run the tests
-  //     if (doctest::Context{}.run() != 0)
-  //         return EXIT_FAILURE;
-  //     // The CI does not have a GPU so it cannot run the rest of the code.
-  //     const bool no_gpu_available =
-  //         argc >= 2 && strcmp(argv[1], "-nogpu") == 0; //
-  //         NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-  //     if (no_gpu_available)
-  //         return EXIT_SUCCESS;
-  // }
 
   // Actual app
   auto ctx = p6::Context{{.title = "Papeterie"}};
   //   ctx.maximize_window();
-
-  std::vector<Boid> boids(100);
 
   ///////////////////////////
   // boids 3D avec OPENGL //
@@ -109,19 +97,18 @@ int main() {
     positions.push_back(glm::sphericalRand(2.0f));
   }
 
+  std::vector<Boid> boids(boid_number);
+  // initialisation des positions de boid
+  for (auto &boid : boids) {
+    boid.set_pos(glm::vec3(p6::random::number(-2, 2), p6::random::number(-1, 1),
+                           p6::random::number(-2, 0)));
+  }
+
   // Declare your infinite update loop.
   ctx.update = [&]() {
     // Clear the background with a fading effect
     ctx.use_stroke = false;
-    ctx.fill = {0.2f, 0.1f, 0.3f, 0.1f};
-    // ctx.fill = {p6::random::number(-1, 0.5), p6::random::number(-1, 0.5),
-    //             p6::random::number(-1, 0.5)}; // random
-    // ctx.rectangle(p6::FullScreen{});
-
     ctx.background({0.2f, 0.1f, 0.3f});
-    // ctx.fill = {1.f, 0.7f, 0.2f};
-    // ctx.fill = {p6::random::number(0.5, 1), p6::random::number(0.5, 1),
-    //             p6::random::number(0.5, 1)}; // random
 
     ImGui::Begin("Test");
     ImGui::SliderFloat("Cohesion Magnitude", &Boid::cohesion_magnitude, 0.f,
@@ -149,26 +136,18 @@ int main() {
     shader.use();
     glBindVertexArray(vao);
 
-    std::vector<Boid> boids(boid_number);
-    for (size_t i = 1; i < 32; i++) {
+    for (auto &boid : boids) {
 
-    // initialisation des positions de boid
-    for (auto& boid : boids)
-    {
-        boid.set_pos(
-            glm::vec3(p6::random::number(-2, 2), p6::random::number(-1, 1), p6::random::number(-2, 0))
-        );
-    }
       MVMatrix =
           glm::translate(glm::mat4{1.f}, {0.f, 0.f, -5.f}); // Translation
       //   MVMatrix = glm::rotate(MVMatrix, ctx.time(),
       //                          AxesRotation.at(i)); // Translation * Rotation
       MVMatrix = glm::translate(
           MVMatrix,
-          positions.at(i)); // Translation * Rotation * Translation
+          boid.get_pos()); // Translation * Rotation * Translation
       MVMatrix = glm::scale(
           MVMatrix,
-          glm::vec3{0.2f}); // Translation * Rotation * Translation * Scale
+          glm::vec3{0.1f}); // Translation * Rotation * Translation * Scale
 
       glUniformMatrix4fv(uMVPMatrix_location, 1, GL_FALSE,
                          glm::value_ptr(ProjMatrix * MVMatrix));
@@ -178,8 +157,11 @@ int main() {
                          glm::value_ptr(NormalMatrix));
 
       glDrawArrays(GL_TRIANGLES, 0, vertices.size());
-    }
 
+      boid.update_direction(boids);
+      boid.update_velocity();
+      boid.update_position(ctx.delta_time(), ctx.aspect_ratio());
+    }
 
     glBindVertexArray(0);
   };
