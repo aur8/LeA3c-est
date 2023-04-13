@@ -1,14 +1,15 @@
 #include "Boid.hpp"
-#include "glimac/common.hpp"
-#include "glm/ext/matrix_clip_space.hpp"
-#include "glm/ext/matrix_transform.hpp"
+#include "glimac/TrackballCamera.hpp"
+#include "glimac/sphere_vertices.hpp"
+#include "glm/ext/quaternion_geometric.hpp"
+#include "glm/ext/scalar_constants.hpp"
 #include "glm/fwd.hpp"
 #include "glm/gtc/random.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include "glm/matrix.hpp"
+#include "img/src/Image.h"
 #include "p6/p6.h"
-#include <glimac/sphere_vertices.hpp>
 #include <iostream>
+#include <vector>
 
 // initialisation magnitude
 
@@ -24,6 +25,12 @@ int main() {
   // Actual app
   auto ctx = p6::Context{{.title = "Papeterie"}};
   //   ctx.maximize_window();
+
+  TrackballCamera camera;
+  bool right = false;
+  bool left = false;
+  bool up = false;
+  bool down = false;
 
   ///////////////////////////
   // boids 3D avec OPENGL //
@@ -121,6 +128,63 @@ int main() {
                        1.f);
     ImGui::End();
 
+    // EVENEMENT CAMERA
+
+    // camera
+    if (right) {
+      camera.rotateLeft(-1.f);
+    }
+    if (left) {
+      camera.rotateLeft(1.f);
+    }
+    if (up) {
+      camera.rotateUp(1.f);
+    }
+    if (down) {
+      camera.rotateUp(-1.f);
+    }
+
+    ctx.key_pressed = [&right, &up, &left, &down](p6::Key key) {
+      if (key.physical == GLFW_KEY_D) {
+        right = true;
+      }
+      if (key.physical == GLFW_KEY_A) {
+        left = true;
+      }
+      if (key.physical == GLFW_KEY_W) {
+        up = true;
+      }
+      if (key.physical == GLFW_KEY_S) {
+        down = true;
+      }
+    };
+
+    ctx.key_released = [&right, &up, &left, &down](p6::Key key) {
+      if (key.physical == GLFW_KEY_D) {
+        right = false;
+      }
+      if (key.physical == GLFW_KEY_A) {
+        left = false;
+      }
+      if (key.physical == GLFW_KEY_W) {
+        up = false;
+      }
+      if (key.physical == GLFW_KEY_S) {
+        down = false;
+      }
+    };
+
+    ctx.mouse_dragged = [&camera](const p6::MouseDrag &button) {
+      camera.rotateLeft(button.delta.x * 5);
+      camera.rotateUp(-button.delta.y * 5);
+    };
+
+    ctx.mouse_scrolled = [&](p6::MouseScroll scroll) {
+      camera.moveFront(-scroll.dy);
+    };
+
+    glm::mat4 viewMatrix = camera.getViewMatrix();
+
     // for (auto &boid : boids) {
     //   boid.update_direction(boids);
     //   boid.update_velocity();
@@ -138,8 +202,7 @@ int main() {
 
     for (auto &boid : boids) {
 
-      MVMatrix =
-          glm::translate(glm::mat4{1.f}, {0.f, 0.f, -5.f}); // Translation
+      MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f}); // Translation
       //   MVMatrix = glm::rotate(MVMatrix, ctx.time(),
       //                          AxesRotation.at(i)); // Translation * Rotation
       MVMatrix = glm::translate(
@@ -148,6 +211,7 @@ int main() {
       MVMatrix = glm::scale(
           MVMatrix,
           glm::vec3{0.1f}); // Translation * Rotation * Translation * Scale
+      MVMatrix = viewMatrix * MVMatrix;
 
       glUniformMatrix4fv(uMVPMatrix_location, 1, GL_FALSE,
                          glm::value_ptr(ProjMatrix * MVMatrix));
