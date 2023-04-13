@@ -14,22 +14,24 @@ void Boid::update_position(float delta_time, float ratio)
     // apply velocity to the position
     m_pos.x += m_vel.x * delta_time;
     m_pos.y += m_vel.y * delta_time;
+    m_pos.z += m_vel.z * delta_time;
 
     // move position if boid not in world
     m_pos.x = stay_in_world(m_pos.x, ratio, -ratio);
     m_pos.y = stay_in_world(m_pos.y, 1.f, -1.f);
+    m_pos.z = stay_in_world(m_pos.z, 0.f, -2.f);
 }
 
 void Boid::update_velocity()
 {
     // add a speed factor to direction
-    m_vel = glm::vec2(speed_factor) * glm::normalize(m_direction);
+    m_vel = glm::vec3(speed_factor) * glm::normalize(m_direction);
 }
 
 void Boid::update_direction(const std::vector<Boid>& boids)
 {
     // apply all comportments to direction
-    m_direction += glm::vec2(alignment_magnitude) * this->alignment(boids) + glm::vec2(cohesion_magnitude) * this->cohesion(boids) + glm::vec2(separation_magnitude) * this->separation(boids);
+    m_direction += glm::vec3(alignment_magnitude) * this->alignment(boids) + glm::vec3(cohesion_magnitude) * this->cohesion(boids) + glm::vec3(separation_magnitude) * this->separation(boids);
 
     m_direction = glm::normalize(m_direction);
 }
@@ -51,7 +53,7 @@ float Boid::stay_in_world(const float& value, const float& max, const float& min
 std::vector<Boid> Boid::get_neighbors(const std::vector<Boid>& boids, const float& distance_max)
 {
     std::vector<Boid> neighbors{};
-    for (auto& other_boid : boids)
+    for (const auto& other_boid : boids)
     {
         if (&other_boid != this)
         {
@@ -65,13 +67,13 @@ std::vector<Boid> Boid::get_neighbors(const std::vector<Boid>& boids, const floa
     return neighbors;
 }
 
-glm::vec2 Boid::cohesion(const std::vector<Boid>& boids)
+glm::vec3 Boid::cohesion(const std::vector<Boid>& boids)
 {
     // find the neighbors
     std::vector<Boid> neighbors = get_neighbors(boids, distance_max);
 
     // initialise our cohesion vector
-    glm::vec2 coh(0.f, 0.f);
+    glm::vec3 coh(0.f);
 
     // verify if the boid have neighbors
     if (neighbors.empty())
@@ -85,7 +87,7 @@ glm::vec2 Boid::cohesion(const std::vector<Boid>& boids)
     }
 
     // divise by the number of neighbors
-    coh /= (float)neighbors.size();
+    coh /= static_cast<float>(neighbors.size());
 
     // obtain a final vector
     coh -= m_pos;
@@ -93,13 +95,13 @@ glm::vec2 Boid::cohesion(const std::vector<Boid>& boids)
     return glm::normalize(coh);
 }
 
-glm::vec2 Boid::alignment(const std::vector<Boid>& boids)
+glm::vec3 Boid::alignment(const std::vector<Boid>& boids)
 {
     // find the neighbors
     std::vector<Boid> neighbors = get_neighbors(boids, distance_max);
 
     // initialise our alignment vector
-    glm::vec2 ali(0.f, 0.f);
+    glm::vec3 ali(0.f);
 
     // verify if the boid have neighbors
     if (neighbors.empty())
@@ -115,13 +117,13 @@ glm::vec2 Boid::alignment(const std::vector<Boid>& boids)
     return glm::normalize(ali);
 }
 
-glm::vec2 Boid::separation(const std::vector<Boid>& boids)
+glm::vec3 Boid::separation(const std::vector<Boid>& boids)
 {
     // find the neighbors
     std::vector<Boid> neighbors = get_neighbors(boids, distance_max);
 
     // initialise our separation vector
-    glm::vec2 sep(0.f, 0.f);
+    glm::vec3 sep(0.f);
 
     // verify if the boid have neighbors
     if (neighbors.empty())
@@ -131,7 +133,7 @@ glm::vec2 Boid::separation(const std::vector<Boid>& boids)
 
     for (auto other : neighbors)
     {
-        glm::vec2 towardsMe;
+        glm::vec3 towardsMe;
         towardsMe = this->get_pos() - other.get_pos();
 
         if (length(towardsMe) > 0)
