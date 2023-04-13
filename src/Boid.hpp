@@ -8,9 +8,9 @@
 class Boid {
 private:
     // attributes
-    glm::vec2 m_pos;       // position
-    glm::vec2 m_vel;       // velocity
-    glm::vec2 m_direction; // direction
+    glm::vec3 m_pos;       // position
+    glm::vec3 m_vel;       // velocity
+    glm::vec3 m_direction; // direction
 
 public:
     static float cohesion_magnitude;
@@ -21,20 +21,20 @@ public:
 
     /* CONSTRUCTORS */
     Boid()
-        : m_pos(0), m_vel(0), m_direction(p6::random::direction()){};
-    Boid(glm::vec2 position)
-        : m_pos(position), m_vel(0), m_direction(p6::random::direction()){};
+        : m_pos(0), m_vel(0), m_direction(p6::random::direction(), 0){};
+    Boid(glm::vec3 position)
+        : m_pos(position), m_vel(0), m_direction(p6::random::direction(), 0){};
 
     /* DESTRUCTOR */
     ~Boid() = default;
 
     /* GETTEUR */
-    glm::vec2 get_pos() const { return m_pos; }
-    glm::vec2 get_vel() const { return m_vel; }
-    glm::vec2 get_direction() const { return m_direction; }
+    glm::vec3 get_pos() const { return m_pos; }
+    glm::vec3 get_vel() const { return m_vel; }
+    glm::vec3 get_direction() const { return m_direction; }
 
     /* SETTEUR */
-    void set_pos(const glm::vec2 position) { m_pos = position; }
+    void set_pos(const glm::vec3 position) { m_pos = position; }
 
     /* DISPLAY */
     void display();
@@ -55,13 +55,13 @@ public:
     /* BOID RULES */
 
     // Cohesion
-    glm::vec2 cohesion(const std::vector<Boid>& boids);
+    glm::vec3 cohesion(const std::vector<Boid>& boids);
 
     // Separation
-    glm::vec2 separation(const std::vector<Boid>& boids);
+    glm::vec3 separation(const std::vector<Boid>& boids);
 
     // Alignment
-    glm::vec2 alignment(const std::vector<Boid>& boids);
+    glm::vec3 alignment(const std::vector<Boid>& boids);
 
     /* BOID WITH WINDOW */
     float stay_in_world(const float& value, const float& max, const float& min);

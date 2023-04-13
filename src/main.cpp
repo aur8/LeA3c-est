@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
     for (auto& boid : boids)
     {
         boid.set_pos(
-            glm::vec2(p6::random::number(-2, 2), p6::random::number(-1, 1))
+            glm::vec3(p6::random::number(-2, 2), p6::random::number(-1, 1), p6::random::number(-2, 0))
         );
     }
 
