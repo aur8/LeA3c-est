@@ -20,6 +20,18 @@ float Boid::distance_max = 0.5f;
 float Boid::speed_factor = 0.5f;
 static int boid_number = 100;
 
+struct VertexCube {
+  glm::vec3 m_position;
+  glm::vec3 m_normal;
+  glm::vec2 m_texCoords;
+
+  VertexCube()
+      : m_position(glm::vec3()), m_normal(glm::vec3()),
+        m_texCoords(glm::vec2()) {}
+
+  VertexCube(glm::vec3 position, glm::vec3 normal, glm::vec2 texCoords)
+      : m_position(position), m_normal(normal), m_texCoords(texCoords) {}
+};
 int main() {
 
   // Actual app
@@ -53,25 +65,29 @@ int main() {
   glm::mat4 MVMatrix = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
   glm::mat4 NormalMatrix = glm::transpose(glm::inverse(MVMatrix));
 
-  // VBO
-  GLuint vbo = 0;
-  glGenBuffers(1, &vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  // VBO BOIDS
+  GLuint vbo_boids = 0;
+  glGenBuffers(1, &vbo_boids);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
 
   // Création boids
-  const std::vector<glimac::ShapeVertex> vertices =
+  const std::vector<glimac::ShapeVertex> boids_vertices =
       glimac::sphere_vertices(1.f, 32, 16);
 
   // envoie des données au GPU
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glimac::ShapeVertex),
-               vertices.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER,
+               boids_vertices.size() * sizeof(glimac::ShapeVertex),
+               boids_vertices.data(), GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  // VAO
-  GLuint vao = 0;
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
+  // VAO BOIDS
+  GLuint vao_boids = 0;
+  glGenVertexArrays(1, &vao_boids);
+  glBindVertexArray(vao_boids);
+
+  // binding vbo
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
 
   const GLuint VERTEX_ATTR_POSITION = 0;
   const GLuint VERTEX_ATTR_NORMAL = 1;
@@ -80,9 +96,6 @@ int main() {
   glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
   glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
   glEnableVertexAttribArray(VERTEX_ATTR_TEXCOORDS);
-
-  // binding vbo
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
   glVertexAttribPointer(
       VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex),
@@ -198,7 +211,7 @@ int main() {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     shader.use();
-    glBindVertexArray(vao);
+    glBindVertexArray(vao_boids);
 
     for (auto &boid : boids) {
 
@@ -220,7 +233,7 @@ int main() {
       glUniformMatrix4fv(uNormalMatrix_location, 1, GL_FALSE,
                          glm::value_ptr(NormalMatrix));
 
-      glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+      glDrawArrays(GL_TRIANGLES, 0, boids_vertices.size());
 
       boid.update_direction(boids);
       boid.update_velocity();
