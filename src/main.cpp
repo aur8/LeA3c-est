@@ -11,8 +11,6 @@
 #include "img/src/Image.h"
 #include "p6/p6.h"
 
-// initialisation magnitude
-
 static int boid_number = 100;
 
 struct VertexCube {
@@ -104,21 +102,13 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    //   std::vector<glm::vec3> AxesRotation;
     std::vector<glm::vec3> positions;
     for (int i = 0; i < 32; ++i)
     {
-        // AxesRotation.push_back(glm::sphericalRand(1.0f));
         positions.push_back(glm::sphericalRand(2.0f));
     }
 
     std::vector<Boid> boids(boid_number);
-    // initialisation des positions de boid
-    // for (auto& boid : boids)
-    // {
-
-    // boid.set_pos(glm::vec3(p6::random::number(-2, 2), p6::random::number(-1, 1), p6::random::number(-2, 0))); // TODO do this in the default constructor
-    //}
 
     // Declare your infinite update loop.
     ctx.update = [&]() {
