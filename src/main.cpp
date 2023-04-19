@@ -127,10 +127,10 @@ int main()
         ctx.background({0.2f, 0.1f, 0.3f});
 
         ImGui::Begin("Test");
-        ImGui::SliderFloat("Cohesion Magnitude", &Boid::cohesion_magnitude, 0.f, 1.f);
-        ImGui::SliderFloat("Aligment Magnitude", &Boid::alignment_magnitude, 0.f, 1.f);
-        ImGui::SliderFloat("Separation Magnitude", &Boid::separation_magnitude, 0.f, 1.f);
-        ImGui::SliderFloat("Distance with neighbors", &Boid::distance_max, 0.f, 1.f);
+        ImGui::SliderFloat("Cohesion Magnitude", &params.cohesion_magnitude, 0.f, 1.f);
+        ImGui::SliderFloat("Aligment Magnitude", &params.alignment_magnitude, 0.f, 1.f);
+        ImGui::SliderFloat("Separation Magnitude", &params.separation_magnitude, 0.f, 1.f);
+        ImGui::SliderFloat("Distance with neighbors", &params.distance_max, 0.f, 1.f);
         ImGui::End();
 
         // EVENEMENT CAMERA
@@ -238,9 +238,7 @@ int main()
 
             glDrawArrays(GL_TRIANGLES, 0, boids_vertices.size());
 
-            boid.update_direction(boids);
-            boid.update_velocity();
-            boid.update_position(ctx.delta_time(), ctx.aspect_ratio());
+            boid.update(ctx.delta_time(), ctx.aspect_ratio(), boids, params);
         }
 
         glBindVertexArray(0);

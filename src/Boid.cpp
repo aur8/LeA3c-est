@@ -30,10 +30,10 @@ void Boid::update_direction(const std::vector<Boid>& boids, const Params& params
     m_direction = glm::normalize(m_direction);
 }
 
-void Boid::update(const float delta_time, const float ratio, float speed_factor, const std::vector<Boid>& boids, Params& params)
+void Boid::update(const float delta_time, const float ratio, const std::vector<Boid>& boids, Params& params)
 {
     update_direction(boids, params);
-    update_position(delta_time, ratio, speed_factor);
+    update_position(delta_time, ratio, params.speed_factor);
 }
 
 // boids which go out world will reappear to the other side

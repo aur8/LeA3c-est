@@ -6,11 +6,11 @@
 #pragma once
 
 struct Params {
-    float cohesion_magnitude{10};
-    float alignment_magnitude;
-    float separation_magnitude;
-    float distance_max;
-    float speed_factor;
+    float cohesion_magnitude{0.5f};
+    float alignment_magnitude{0.5f};
+    float separation_magnitude{0.5f};
+    float distance_max{0.5f};
+    float speed_factor{0.5f};
 };
 
 class Boid {
@@ -40,7 +40,7 @@ public:
 
     /* BOID VELOCITY */
 
-    void update(const float delta_time, const float ratio, const float speed_factor, const std::vector<Boid>& boids, Params& params);
+    void update(const float delta_time, const float ratio, const std::vector<Boid>& boids, Params& params);
     void update_position(const float delta_time, const float ratio, const float speed_factor); // TODO make an update function that calls all the nceessary updates
     void update_direction(const std::vector<Boid>& boids, const Params& params);
 
