@@ -81,9 +81,18 @@ int main()
     // binding vbo
     glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
 
-    const GLuint VERTEX_ATTR_POSITION  = 0;
-    const GLuint VERTEX_ATTR_NORMAL    = 1;
-    const GLuint VERTEX_ATTR_TEXCOORDS = 2;
+  // VBO CUBE
+  GLuint vbo_cube = 0;
+  glGenBuffers(1, &vbo_cube);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
+
+  // création CUBE
+
+  /// TODO vertices cube
+
+  const GLuint VERTEX_ATTR_POSITION = 0;
+  const GLuint VERTEX_ATTR_NORMAL = 1;
+  const GLuint VERTEX_ATTR_TEXCOORDS = 2;
 
     glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
     glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
