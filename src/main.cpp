@@ -2,6 +2,8 @@
 #include <vector>
 #include "Boid.hpp"
 #include "Character.hpp"
+#include "GLFW/glfw3.h"
+#include "glimac/FreeflyCamera.hpp"
 #include "glimac/TrackballCamera.hpp"
 #include "glimac/sphere_vertices.hpp"
 #include "glm/ext/quaternion_geometric.hpp"
@@ -31,11 +33,15 @@ int main()
     auto ctx = p6::Context{{.title = "Papeterie"}};
     //   ctx.maximize_window();
 
-    TrackballCamera camera;
-    bool            right = false;
-    bool            left  = false;
-    bool            up    = false;
-    bool            down  = false;
+    FreeflyCamera camera;
+    bool          right_rot  = false;
+    bool          left_rot   = false;
+    bool          up_rot     = false;
+    bool          down_rot   = false;
+    bool          right_move = false;
+    bool          left_move  = false;
+    bool          front_move = false;
+    bool          back_move  = false;
 
     Params params = {};
 
@@ -178,59 +184,110 @@ int main()
         // EVENEMENT CAMERA
 
         // camera
-        if (right)
+        if (right_rot)
         {
             camera.rotateLeft(-1.f);
-            character.move(0.5f, 0., 0.);
         }
-        if (left)
+        if (left_rot)
         {
             camera.rotateLeft(1.f);
         }
-        if (up)
+        if (up_rot)
         {
             camera.rotateUp(1.f);
         }
-        if (down)
+        if (down_rot)
         {
             camera.rotateUp(-1.f);
         }
+        if (left_move)
+        {
+            // camera.moveLeft(0.5f);
+            character.move(-2.5f, 0., 0.);
+        }
+        if (right_move)
+        {
+            // camera.moveLeft(-0.5f);
+            character.move(2.5f, 0., 0.);
+        }
+        if (front_move)
+        {
+            // camera.moveFront(-0.5f);
+            character.move(0.f, 0.f, -2.5f);
+        }
+        if (back_move)
+        {
+            // camera.moveFront(0.5f);
+            character.move(0.f, 0.f, 2.5f);
+        }
 
-        ctx.key_pressed = [&right, &up, &left, &down](p6::Key key) {
+        ctx.key_pressed = [&right_rot, &up_rot, &left_rot, &down_rot, &left_move, &right_move, &front_move, &back_move](p6::Key key) {
             if (key.physical == GLFW_KEY_D)
             {
-                right = true;
+                right_rot = true;
             }
             if (key.physical == GLFW_KEY_A)
             {
-                left = true;
+                left_rot = true;
             }
             if (key.physical == GLFW_KEY_W)
             {
-                up = true;
+                up_rot = true;
             }
             if (key.physical == GLFW_KEY_S)
             {
-                down = true;
+                down_rot = true;
+            }
+            if (key.physical == GLFW_KEY_LEFT)
+            {
+                left_move = true;
+            }
+            if (key.physical == GLFW_KEY_RIGHT)
+            {
+                right_move = true;
+            }
+            if (key.physical == GLFW_KEY_UP)
+            {
+                front_move = true;
+            }
+            if (key.physical == GLFW_KEY_DOWN)
+            {
+                back_move = true;
             }
         };
 
-        ctx.key_released = [&right, &up, &left, &down](p6::Key key) {
+        ctx.key_released = [&right_rot, &up_rot, &left_rot, &down_rot, &left_move, &right_move, &front_move, &back_move](p6::Key key) {
             if (key.physical == GLFW_KEY_D)
             {
-                right = false;
+                right_rot = false;
             }
             if (key.physical == GLFW_KEY_A)
             {
-                left = false;
+                left_rot = false;
             }
             if (key.physical == GLFW_KEY_W)
             {
-                up = false;
+                up_rot = false;
             }
             if (key.physical == GLFW_KEY_S)
             {
-                down = false;
+                down_rot = false;
+            }
+            if (key.physical == GLFW_KEY_LEFT)
+            {
+                left_move = false;
+            }
+            if (key.physical == GLFW_KEY_RIGHT)
+            {
+                right_move = false;
+            }
+            if (key.physical == GLFW_KEY_UP)
+            {
+                front_move = false;
+            }
+            if (key.physical == GLFW_KEY_DOWN)
+            {
+                back_move = false;
             }
         };
 
@@ -304,6 +361,8 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, character_vertices.size());
 
         glBindVertexArray(0);
+
+        camera.follow_character(character.get_pos());
     };
 
     // Should be done last. It starts the infinite loop.

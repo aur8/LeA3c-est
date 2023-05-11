@@ -13,7 +13,7 @@ private:
 public:
     /* CONSTRUCTORS */
     Character()
-        : m_position(0., 0., -5.f), m_velocity(0.), m_speed(0.2f){};
+        : m_position(0., 0., -2.f), m_velocity(0.), m_speed(0.2f){};
 
     Character(glm::vec3 position)
         : m_position(position), m_velocity(0.), m_speed(0.2f){};

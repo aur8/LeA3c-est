@@ -25,6 +25,7 @@ public:
     void moveFront(float t);
     void rotateLeft(float degrees);
     void rotateUp(float degrees);
+    void follow_character(const glm::vec3 character_position);
 
     glm::mat4 getViewMatrix() const;
 };
