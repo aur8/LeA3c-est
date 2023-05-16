@@ -15,8 +15,8 @@ void Boid::update_position(const float delta_time, const float ratio, const floa
 
     // move position if boid not in world
     m_pos.x = stay_in_world(m_pos.x, ratio, -ratio);
-    m_pos.y = stay_in_world(m_pos.y, 1.f, -1.f);
-    m_pos.z = stay_in_world(m_pos.z, 0.f, -2.f);
+    m_pos.y = stay_in_world(m_pos.y, ratio, -ratio);
+    m_pos.z = stay_in_world(m_pos.z, ratio, -ratio);
 }
 
 void Boid::update_direction(const std::vector<Boid>& boids, const Params& params)

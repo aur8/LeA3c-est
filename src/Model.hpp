@@ -62,8 +62,6 @@ public:
                         attrib.normals[3 * index.normal_index + 2]
                     );
 
-                    std::cout << "pendant le load \n";
-
                     vertex.texCoords = glm::vec2(
                         attrib.texcoords[2 * index.texcoord_index + 0],
                         attrib.texcoords[2 * index.texcoord_index + 1]
