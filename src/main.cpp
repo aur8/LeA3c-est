@@ -1,7 +1,12 @@
 #include <iostream>
 #include <vector>
 #include "Boid.hpp"
+#include "Character.hpp"
+#include "GLFW/glfw3.h"
+#include "Model.hpp"
+#include "glimac/FreeflyCamera.hpp"
 #include "glimac/TrackballCamera.hpp"
+#include "glimac/common.hpp"
 #include "glimac/sphere_vertices.hpp"
 #include "glm/ext/quaternion_geometric.hpp"
 #include "glm/ext/scalar_constants.hpp"
@@ -30,14 +35,25 @@ int main()
     auto ctx = p6::Context{{.title = "Papeterie"}};
     //   ctx.maximize_window();
 
-    TrackballCamera camera;
-    bool            right = false;
-    bool            left  = false;
-    bool            up    = false;
-    bool            down  = false;
+    FreeflyCamera camera;
+    bool          right_rot  = false;
+    bool          left_rot   = false;
+    bool          up_rot     = false;
+    bool          down_rot   = false;
+    bool          right_move = false;
+    bool          left_move  = false;
+    bool          front_move = false;
+    bool          back_move  = false;
 
     Params params = {};
 
+    /*  LOADING MODELS */
+
+    std::cout << "avant le load \n";
+
+    Model character_model = Model("kaonashi.obj");
+
+    std::cout << "après le load \n";
     ///////////////////////////
     // boids 3D avec OPENGL //
     /////////////////////////
@@ -81,18 +97,59 @@ int main()
     // binding vbo
     glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
 
-  // VBO CUBE
-  GLuint vbo_cube = 0;
-  glGenBuffers(1, &vbo_cube);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
+    // // VBO CUBE
+    // GLuint vbo_cube = 0;
+    // glGenBuffers(1, &vbo_cube);
+    // glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
 
-  // création CUBE
+    // // création CUBE
 
-  /// TODO vertices cube
+    // /// TODO vertices cube
 
-  const GLuint VERTEX_ATTR_POSITION = 0;
-  const GLuint VERTEX_ATTR_NORMAL = 1;
-  const GLuint VERTEX_ATTR_TEXCOORDS = 2;
+    const GLuint VERTEX_ATTR_POSITION  = 0;
+    const GLuint VERTEX_ATTR_NORMAL    = 1;
+    const GLuint VERTEX_ATTR_TEXCOORDS = 2;
+
+    glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
+    glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
+    glEnableVertexAttribArray(VERTEX_ATTR_TEXCOORDS);
+
+    glVertexAttribPointer(
+        VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex),
+        (const GLvoid*)offsetof(glimac::ShapeVertex, position)
+    );
+    glVertexAttribPointer(VERTEX_ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex), (const GLvoid*)offsetof(glimac::ShapeVertex, normal));
+    glVertexAttribPointer(
+        VERTEX_ATTR_TEXCOORDS, 2, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex),
+        (const GLvoid*)offsetof(glimac::ShapeVertex, texCoords)
+    );
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    // VBO CHARACTER
+    GLuint vbo_character = 0;
+    glGenBuffers(1, &vbo_character);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_character);
+
+    // VAO CHARACTER
+    GLuint vao_character = 0;
+    glGenVertexArrays(1, &vao_character);
+    glBindVertexArray(vao_character);
+
+    // Création character
+    Character character;
+
+    const std::vector<glimac::ShapeVertex> character_vertices =
+        character_model.getVertices();
+
+    // envoie des données au GPU
+    glBufferData(GL_ARRAY_BUFFER, character_model.getVertices().size() * sizeof(glimac::ShapeVertex), character_vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // bind vbo
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_character);
 
     glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
     glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
@@ -117,6 +174,7 @@ int main()
         positions.push_back(glm::sphericalRand(2.0f));
     }
 
+    /* BOIDS TAB */
     std::vector<Boid> boids(boid_number);
 
     // Declare your infinite update loop.
@@ -135,58 +193,110 @@ int main()
         // EVENEMENT CAMERA
 
         // camera
-        if (right)
+        if (right_rot)
         {
             camera.rotateLeft(-1.f);
         }
-        if (left)
+        if (left_rot)
         {
             camera.rotateLeft(1.f);
         }
-        if (up)
+        if (up_rot)
         {
             camera.rotateUp(1.f);
         }
-        if (down)
+        if (down_rot)
         {
             camera.rotateUp(-1.f);
         }
+        if (left_move)
+        {
+            // camera.moveLeft(0.5f);
+            character.move(-2.5f, 0., 0.);
+        }
+        if (right_move)
+        {
+            // camera.moveLeft(-0.5f);
+            character.move(2.5f, 0., 0.);
+        }
+        if (front_move)
+        {
+            // camera.moveFront(-0.5f);
+            character.move(0.f, 0.f, -2.5f);
+        }
+        if (back_move)
+        {
+            // camera.moveFront(0.5f);
+            character.move(0.f, 0.f, 2.5f);
+        }
 
-        ctx.key_pressed = [&right, &up, &left, &down](p6::Key key) {
+        ctx.key_pressed = [&right_rot, &up_rot, &left_rot, &down_rot, &left_move, &right_move, &front_move, &back_move](p6::Key key) {
             if (key.physical == GLFW_KEY_D)
             {
-                right = true;
+                right_rot = true;
             }
             if (key.physical == GLFW_KEY_A)
             {
-                left = true;
+                left_rot = true;
             }
             if (key.physical == GLFW_KEY_W)
             {
-                up = true;
+                up_rot = true;
             }
             if (key.physical == GLFW_KEY_S)
             {
-                down = true;
+                down_rot = true;
+            }
+            if (key.physical == GLFW_KEY_LEFT)
+            {
+                left_move = true;
+            }
+            if (key.physical == GLFW_KEY_RIGHT)
+            {
+                right_move = true;
+            }
+            if (key.physical == GLFW_KEY_UP)
+            {
+                front_move = true;
+            }
+            if (key.physical == GLFW_KEY_DOWN)
+            {
+                back_move = true;
             }
         };
 
-        ctx.key_released = [&right, &up, &left, &down](p6::Key key) {
+        ctx.key_released = [&right_rot, &up_rot, &left_rot, &down_rot, &left_move, &right_move, &front_move, &back_move](p6::Key key) {
             if (key.physical == GLFW_KEY_D)
             {
-                right = false;
+                right_rot = false;
             }
             if (key.physical == GLFW_KEY_A)
             {
-                left = false;
+                left_rot = false;
             }
             if (key.physical == GLFW_KEY_W)
             {
-                up = false;
+                up_rot = false;
             }
             if (key.physical == GLFW_KEY_S)
             {
-                down = false;
+                down_rot = false;
+            }
+            if (key.physical == GLFW_KEY_LEFT)
+            {
+                left_move = false;
+            }
+            if (key.physical == GLFW_KEY_RIGHT)
+            {
+                right_move = false;
+            }
+            if (key.physical == GLFW_KEY_UP)
+            {
+                front_move = false;
+            }
+            if (key.physical == GLFW_KEY_DOWN)
+            {
+                back_move = false;
             }
         };
 
@@ -239,8 +349,29 @@ int main()
 
             boid.update(ctx.delta_time(), ctx.aspect_ratio(), boids, params);
         }
+        glBindVertexArray(0);
+
+        glBindVertexArray(vao_character);
+        MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
+        MVMatrix = glm::translate(
+            MVMatrix,
+            character.get_pos()
+        );
+        MVMatrix = glm::scale(
+            MVMatrix,
+            glm::vec3{0.5f}
+        );
+        MVMatrix = viewMatrix * MVMatrix;
+
+        glUniformMatrix4fv(uMVPMatrix_location, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
+        glUniformMatrix4fv(uMVMatrix_location, 1, GL_FALSE, glm::value_ptr(MVMatrix));
+        glUniformMatrix4fv(uNormalMatrix_location, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
+
+        glDrawArrays(GL_TRIANGLES, 0, character_vertices.size());
 
         glBindVertexArray(0);
+
+        camera.follow_character(character.get_pos());
     };
 
     // Should be done last. It starts the infinite loop.
