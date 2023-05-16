@@ -49,11 +49,8 @@ int main()
 
     /*  LOADING MODELS */
 
-    std::cout << "avant le load \n";
-
     Model character_model = Model("kaonashi.obj");
 
-    std::cout << "après le load \n";
     ///////////////////////////
     // boids 3D avec OPENGL //
     /////////////////////////
@@ -347,7 +344,7 @@ int main()
 
             glDrawArrays(GL_TRIANGLES, 0, boids_vertices.size());
 
-            boid.update(ctx.delta_time(), ctx.aspect_ratio(), boids, params);
+            boid.update(ctx.delta_time(), 10, boids, params);
         }
         glBindVertexArray(0);
 
