@@ -3,8 +3,10 @@
 #include "Boid.hpp"
 #include "Character.hpp"
 #include "GLFW/glfw3.h"
+#include "Model.hpp"
 #include "glimac/FreeflyCamera.hpp"
 #include "glimac/TrackballCamera.hpp"
+#include "glimac/common.hpp"
 #include "glimac/sphere_vertices.hpp"
 #include "glm/ext/quaternion_geometric.hpp"
 #include "glm/ext/scalar_constants.hpp"
@@ -45,6 +47,13 @@ int main()
 
     Params params = {};
 
+    /*  LOADING MODELS */
+
+    std::cout << "avant le load \n";
+
+    Model character_model = Model("kaonashi.obj");
+
+    std::cout << "après le load \n";
     ///////////////////////////
     // boids 3D avec OPENGL //
     /////////////////////////
@@ -132,10 +141,10 @@ int main()
     Character character;
 
     const std::vector<glimac::ShapeVertex> character_vertices =
-        glimac::sphere_vertices(5.f, 32, 16);
+        character_model.getVertices();
 
     // envoie des données au GPU
-    glBufferData(GL_ARRAY_BUFFER, character_vertices.size() * sizeof(glimac::ShapeVertex), character_vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, character_model.getVertices().size() * sizeof(glimac::ShapeVertex), character_vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 

@@ -38,6 +38,10 @@ function(add_exercise EXERCISE_NAME)
     # ---Link p6 library---
     target_link_libraries(${TARGET_NAME} PRIVATE p6::p6)
 
+    #---add tinyobjloader library
+    add_library(loader tiny_obj_loader.cc)
+    target_link_libraries(src_exe PRIVATE loader)
+
     # ---Set the output folder---
     set_target_properties(${TARGET_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/${EXERCISE_NAME})
