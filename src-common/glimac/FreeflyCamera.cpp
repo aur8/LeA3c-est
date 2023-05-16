@@ -1,6 +1,7 @@
 #include "FreeflyCamera.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/fwd.hpp"
+#include "glm/gtc/quaternion.hpp"
 
 void FreeflyCamera::computeDirectionVectors()
 {
@@ -40,5 +41,5 @@ void FreeflyCamera::follow_character(const glm::vec3 character_position)
 
 glm::mat4 FreeflyCamera::getViewMatrix() const
 {
-    return glm::lookAt(m_position, m_position + m_FrontVector, m_UpVector);
+    return glm::lookAt(m_position, m_position + 5.f * m_FrontVector, m_UpVector);
 }
