@@ -50,9 +50,9 @@ int main() {
   /*  LOADING MODELS */
 
   Model character_model = Model("kaonashi.obj");
-  Model cube_model = Model("cube1.obj");
+  Model cube_model = Model("cube3.obj");
   Model boids_model = Model("paper.obj");
-  // Model environment_model = Model("environment.obj");
+  Model environment_model = Model("environment2.obj");
 
   ///////////////////////////
   // boids 3D avec OPENGL //
@@ -209,51 +209,48 @@ int main() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  // // VBO ENVIRONMENT
-  // GLuint vbo_environment = 0;
-  // glGenBuffers(1, &vbo_cube);
-  // glBindBuffer(GL_ARRAY_BUFFER, vbo_cube);
+  // VBO ENVIRONMENT
+  GLuint vbo_environment = 0;
+  glGenBuffers(1, &vbo_environment);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_environment);
 
-  // // VAO ENVIRONMENT
-  // GLuint vao_environment = 0;
-  // glGenVertexArrays(1, &vao_cube);
-  // glBindVertexArray(vao_cube);
+  // VAO ENVIRONMENT
+  GLuint vao_environment = 0;
+  glGenVertexArrays(1, &vao_environment);
+  glBindVertexArray(vao_environment);
 
-  // // CREATE ENVIRONMENT
+  // CREATE ENVIRONMENT
 
-  // const std::vector<glimac::ShapeVertex> environment_vertices =
-  //     environment_model.getVertices();
+  const std::vector<glimac::ShapeVertex> environment_vertices =
+      environment_model.getVertices();
 
-  // // envoie des données au GPU
-  // glBufferData(GL_ARRAY_BUFFER,
-  //              environment_model.getVertices().size() *
-  //                  sizeof(glimac::ShapeVertex),
-  //              environment_vertices.data(), GL_STATIC_DRAW);
+  // envoie des données au GPU
+  glBufferData(GL_ARRAY_BUFFER,
+               environment_model.getVertices().size() *
+                   sizeof(glimac::ShapeVertex),
+               environment_vertices.data(), GL_STATIC_DRAW);
 
-  // glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-  // // bind vbo
-  // glBindBuffer(GL_ARRAY_BUFFER, vbo_environment);
+  // bind vbo
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_environment);
 
-  // glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
-  // glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
-  // glEnableVertexAttribArray(VERTEX_ATTR_TEXCOORDS);
+  glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
+  glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
+  glEnableVertexAttribArray(VERTEX_ATTR_TEXCOORDS);
 
-  // glVertexAttribPointer(
-  //     VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE,
-  //     sizeof(glimac::ShapeVertex), (const GLvoid
-  //     *)offsetof(glimac::ShapeVertex, position));
-  // glVertexAttribPointer(VERTEX_ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE,
-  //                       sizeof(glimac::ShapeVertex),
-  //                       (const GLvoid *)offsetof(glimac::ShapeVertex,
-  //                       normal));
-  // glVertexAttribPointer(
-  //     VERTEX_ATTR_TEXCOORDS, 2, GL_FLOAT, GL_FALSE,
-  //     sizeof(glimac::ShapeVertex), (const GLvoid
-  //     *)offsetof(glimac::ShapeVertex, texCoords));
+  glVertexAttribPointer(
+      VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex),
+      (const GLvoid *)offsetof(glimac::ShapeVertex, position));
+  glVertexAttribPointer(VERTEX_ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE,
+                        sizeof(glimac::ShapeVertex),
+                        (const GLvoid *)offsetof(glimac::ShapeVertex, normal));
+  glVertexAttribPointer(
+      VERTEX_ATTR_TEXCOORDS, 2, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex),
+      (const GLvoid *)offsetof(glimac::ShapeVertex, texCoords));
 
-  // glBindBuffer(GL_ARRAY_BUFFER, 0);
-  // glBindVertexArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
 
   std::vector<glm::vec3> positions;
   for (int i = 0; i < 32; ++i) {
@@ -415,7 +412,7 @@ int main() {
 
       glDrawArrays(GL_TRIANGLES, 0, boids_vertices.size());
 
-      boid.update(ctx.delta_time(), 10, boids, params);
+      boid.update(ctx.delta_time(), 5, boids, params);
     }
     glBindVertexArray(0);
 
@@ -439,18 +436,12 @@ int main() {
     camera.follow_character(character.get_pos());
 
     glBindVertexArray(vao_cube);
-    MVMatrix = glm::scale(MVMatrix, glm::vec3{2.0f});
-    glUniformMatrix4fv(uMVMatrix_location, 1, GL_FALSE,
-                       glm::value_ptr(MVMatrix));
     glDrawArrays(GL_TRIANGLES, 0, cube_vertices.size());
     glBindVertexArray(0);
 
-    // glBindVertexArray(vao_environment);
-    // MVMatrix = glm::scale(MVMatrix, glm::vec3{0.1f});
-    // glUniformMatrix4fv(uMVMatrix_location, 1, GL_FALSE,
-    //                    glm::value_ptr(MVMatrix));
-    // glDrawArrays(GL_TRIANGLES, 0, environment_vertices.size());
-    // glBindVertexArray(0);
+    glBindVertexArray(vao_environment);
+    glDrawArrays(GL_TRIANGLES, 0, environment_vertices.size());
+    glBindVertexArray(0);
   };
 
   // Should be done last. It starts the infinite loop.
