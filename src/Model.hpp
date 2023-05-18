@@ -18,7 +18,7 @@ public:
         std::string warn;
 
         std::string objFile = "assets/models/" + filename;
-        // std::string mtlFile = "/home/pauline/Documents/S4/Papeterie/assets/models/";
+        std::string mtlFile = "/home/pauline/Documents/S4/Papeterie/assets/models/";
 
         bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, objFile.c_str());
 
