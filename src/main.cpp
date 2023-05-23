@@ -228,17 +228,6 @@ int main()
 
         glm::mat4 viewMatrix = camera.getViewMatrix();
 
-        // for (auto &boid : boids) {
-        //   boid.update_direction(boids);
-        //   boid.update_velocity();
-        //   boid.update_position(ctx.delta_time(), ctx.aspect_ratio());
-
-        //   ctx.fill = {p6::random::number(0.5, 1), p6::random::number(0.5, 1),
-        //               p6::random::number(0.5, 1)};
-        //   ctx.circle(p6::Center{boid.get_pos().x, boid.get_pos().y},
-        //              p6::Radius{0.01f});
-        // }
-
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.use();
         glBindVertexArray(boids_model.get_vao());
@@ -246,8 +235,6 @@ int main()
         for (auto& boid : boids)
         {
             MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f}); // Translation
-            //   MVMatrix = glm::rotate(MVMatrix, ctx.time(),
-            //                          AxesRotation.at(i)); // Translation * Rotation
             MVMatrix = glm::translate(
                 MVMatrix,
                 boid.get_pos()
@@ -268,6 +255,22 @@ int main()
         }
         glBindVertexArray(0);
 
+        glBindVertexArray(cube_model.get_vao());
+        MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
+        MVMatrix = glm::scale(MVMatrix, glm::vec3{0.5f});
+        MVMatrix = viewMatrix * MVMatrix;
+
+        glUniformMatrix4fv(uMVPMatrix_location, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
+        glUniformMatrix4fv(uMVMatrix_location, 1, GL_FALSE, glm::value_ptr(MVMatrix));
+        glUniformMatrix4fv(uNormalMatrix_location, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
+
+        glDrawArrays(GL_TRIANGLES, 0, cube_model.getVertices().size());
+        glBindVertexArray(0);
+
+        glBindVertexArray(environment_model.get_vao());
+        glDrawArrays(GL_TRIANGLES, 0, environment_model.getVertices().size());
+        glBindVertexArray(0);
+
         glBindVertexArray(character_model.get_vao());
         MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
         MVMatrix = glm::translate(MVMatrix, character.get_pos());
@@ -283,14 +286,6 @@ int main()
         glBindVertexArray(0);
 
         camera.follow_character(character.get_pos());
-
-        glBindVertexArray(cube_model.get_vao());
-        glDrawArrays(GL_TRIANGLES, 0, cube_model.getVertices().size());
-        glBindVertexArray(0);
-
-        glBindVertexArray(environment_model.get_vao());
-        glDrawArrays(GL_TRIANGLES, 0, environment_model.getVertices().size());
-        glBindVertexArray(0);
     };
 
     // Should be done last. It starts the infinite loop.
