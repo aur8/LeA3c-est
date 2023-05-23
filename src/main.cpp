@@ -268,11 +268,11 @@ int main()
 
         program._program.use();
 
-        glm::vec3 lightPosition     = glm::vec3(0.f, 4.f, 0.f);
+        glm::vec3 lightPosition     = glm::vec3(0.f, 20.f, 0.f);
         glm::vec3 lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
         glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
 
-        glm::vec3 intensity = glm::vec3(0.f, 10.f, 10.f);
+        glm::vec3 intensity = glm::vec3(500.f, 500.f, 500.f);
         glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
 
         glBindVertexArray(environment_model.get_vao());
@@ -291,6 +291,13 @@ int main()
         glBindVertexArray(0);
 
         glBindVertexArray(cube_model.get_vao());
+        MVMatrix = glm::scale(MVMatrix, glm::vec3{5.f});
+        MVMatrix = viewMatrix * MVMatrix;
+
+        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
+        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
+        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
+
         glDrawArrays(GL_TRIANGLES, 0, cube_model.getVertices().size());
         glBindVertexArray(0);
 
@@ -335,11 +342,11 @@ int main()
 
         glDrawArrays(GL_TRIANGLES, 0, character_model.getVertices().size());
 
-        glm::vec3 tViewPoint  = (viewCamera * glm::vec4(5.f, 1.f, 0.f, 0.f));
+        glm::vec3 tViewPoint  = (viewCamera * glm::vec4(0.f, 5.f, 0.f, 0.f));
         glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y, tViewPoint.z);
         glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(tLightPoint));
 
-        intensity = glm::vec3(10.f, 0.f, 10.f);
+        intensity = glm::vec3(100.f, 0.f, 100.f);
         glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
 
         glBindVertexArray(0);
