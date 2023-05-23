@@ -89,15 +89,6 @@ int main()
     // load shader
     Program program;
 
-    // const p6::Shader shader =
-    //  p6::load_shader("shaders/3D.vs.glsl", "shaders/pointLight.fs.glsl");
-
-    // variable uniform
-    // GLint uMVPMatrix_location = glGetUniformLocation(shader.id(), "uMVPMatrix");
-    // GLint uMVMatrix_location  = glGetUniformLocation(shader.id(), "uMVMatrix");
-    // GLint uNormalMatrix_location =
-    //     glGetUniformLocation(shader.id(), "uNormalMatrix");
-
     glEnable(GL_DEPTH_TEST);
 
     glm::mat4 ProjMatrix =
@@ -130,23 +121,6 @@ int main()
         positions.push_back(glm::sphericalRand(2.0f));
     }
 
-    // FIXED LIGHT
-
-    program._program.use();
-    glm::mat4 lightMatrix = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
-    glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(lightMatrix));
-    glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
-    glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
-    glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
-    glUniform1f(program.uShininess, 0.9f);
-
-    glm::vec3 tViewPoint(0.f, 3.f, -5.f);
-    glm::vec3 tLightPoint = tViewPoint;
-
-    glUniform3fv(program.uLightPosition, 1, glm::value_ptr(tLightPoint));
-    glm::vec3 intensity = glm::vec3(5.f, 0.f, 5.f);
-    glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
-
     /* BOIDS TAB */
     std::vector<Boid> boids(boid_number);
 
@@ -157,7 +131,6 @@ int main()
         ctx.background({0.2f, 0.1f, 0.3f});
 
         program._program.use();
-        viewCamera = camera.getViewMatrix();
 
         ImGui::Begin("Test");
         ImGui::SliderFloat("Cohesion Magnitude", &params.cohesion_magnitude, 0.f, 1.f);
@@ -291,6 +264,40 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // FIXED LIGHT
+
+        program._program.use();
+
+        glm::vec3 lightPosition     = glm::vec3(0.f, 4.f, 0.f);
+        glm::vec3 lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
+        glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
+
+        glm::vec3 intensity = glm::vec3(0.f, 10.f, 10.f);
+        glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
+
+        glBindVertexArray(environment_model.get_vao());
+        MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
+        MVMatrix = viewMatrix * MVMatrix;
+
+        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
+        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
+        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
+
+        glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
+        glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
+        glUniform1f(program.uShininess, 0.9f);
+
+        glDrawArrays(GL_TRIANGLES, 0, environment_model.getVertices().size());
+        glBindVertexArray(0);
+
+        glBindVertexArray(cube_model.get_vao());
+        glDrawArrays(GL_TRIANGLES, 0, cube_model.getVertices().size());
+        glBindVertexArray(0);
+
+        glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
+        glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
+        glUniform1f(program.uShininess, 0.9f);
+
         glBindVertexArray(boids_model.get_vao());
 
         for (auto& boid : boids)
@@ -316,22 +323,6 @@ int main()
         }
         glBindVertexArray(0);
 
-        glBindVertexArray(cube_model.get_vao());
-        MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
-        MVMatrix = glm::scale(MVMatrix, glm::vec3{0.5f});
-        MVMatrix = viewMatrix * MVMatrix;
-
-        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
-        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
-        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
-
-        glDrawArrays(GL_TRIANGLES, 0, cube_model.getVertices().size());
-        glBindVertexArray(0);
-
-        glBindVertexArray(environment_model.get_vao());
-        glDrawArrays(GL_TRIANGLES, 0, environment_model.getVertices().size());
-        glBindVertexArray(0);
-
         glBindVertexArray(character_model.get_vao());
         MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
         MVMatrix = glm::translate(MVMatrix, character.get_pos());
@@ -344,18 +335,12 @@ int main()
 
         glDrawArrays(GL_TRIANGLES, 0, character_model.getVertices().size());
 
-        tViewPoint = (viewCamera * glm::vec4(5.f, 1.f, 0.f, 0.f));
-        // glm::vec3 tViewPoint  = character.get_pos() + glm::vec3(0.f, 1.f, 0.f);
-        tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y, tViewPoint.z);
-        // glm::vec3 tLightPoint = tViewPoint;
-        //  glm::vec3 tLightPoint = character.get_pos() + glm::vec3(0., 3.f, 1.f);
+        glm::vec3 tViewPoint  = (viewCamera * glm::vec4(5.f, 1.f, 0.f, 0.f));
+        glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y, tViewPoint.z);
         glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(tLightPoint));
 
         intensity = glm::vec3(10.f, 0.f, 10.f);
         glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
-
-        // std::cout << "Poosition du character : x: " << character.get_pos().x << ", y: " << character.get_pos().y << ", z: " << character.get_pos().z << "\n";
-        // std::cout << "Position de la lumière : x: " << tLightPoint.x << ", y: " << tLightPoint.y << ", z: " << tLightPoint.z << "\n";
 
         glBindVertexArray(0);
 
