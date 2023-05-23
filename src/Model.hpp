@@ -1,102 +1,49 @@
 #pragma once
 
+#include "glimac/common.hpp"
+#include "glm/fwd.hpp"
+#include "p6/p6.h"
+#include "tiny_obj_loader.h"
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "glimac/common.hpp"
-#include "glm/fwd.hpp"
-
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "../tiny_obj_loader.h"
 
 class Model {
 public:
-    Model(const std::string& filename)
-    {
-        std::string err;
-        std::string warn;
+  Model(const std::string &filename) { Load_model(filename); }
 
-        std::string objFile = "assets/models/" + filename;
-        // std::string mtlFile = "/home/pauline/Documents/S4/Papeterie/assets/models/";
+  void Load_model(const std::string &filename);
 
-        bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, objFile.c_str());
+  const std::vector<glimac::ShapeVertex> &getVertices() const {
+    return m_vertices;
+  }
 
-        if (!warn.empty())
-        {
-            std::cerr << warn << std::endl;
-        }
+  const tinyobj::attrib_t &getAttrib() const { return m_attrib; }
 
-        if (!err.empty())
-        {
-            throw std::runtime_error(err);
-        }
+  const std::vector<tinyobj::shape_t> &getShapes() const { return m_shapes; }
 
-        if (!ret)
-        {
-            throw std::runtime_error("Failed to load OBJ file");
-        }
+  const std::vector<tinyobj::material_t> &getMaterials() const {
+    return m_materials;
+  }
 
-        for (const auto& shape : shapes)
-        {
-            size_t index_offset = 0;
-            for (size_t i = 0; i < shape.mesh.num_face_vertices.size(); i++)
-            {
-                size_t fv = shape.mesh.num_face_vertices[i];
+  Model() = default;
 
-                for (size_t v = 0; v < fv; v++)
-                {
-                    tinyobj::index_t index = shape.mesh.indices[index_offset + v];
+  ~Model() {
+    glDeleteBuffers(1, &m_vbo);
+    glDeleteVertexArrays(1, &m_vao);
+  };
 
-                    glimac::ShapeVertex vertex;
-
-                    vertex.position = glm::vec3(
-                        attrib.vertices[3 * index.vertex_index + 0],
-                        attrib.vertices[3 * index.vertex_index + 1],
-                        attrib.vertices[3 * index.vertex_index + 2]
-                    );
-
-                    vertex.normal = glm::vec3(
-                        attrib.normals[3 * index.normal_index + 0],
-                        attrib.normals[3 * index.normal_index + 1],
-                        attrib.normals[3 * index.normal_index + 2]
-                    );
-
-                    vertex.texCoords = glm::vec2(
-                        attrib.texcoords[2 * index.texcoord_index + 0],
-                        attrib.texcoords[2 * index.texcoord_index + 1]
-                    );
-
-                    vertices.push_back(vertex);
-                }
-                index_offset += fv;
-            }
-        }
-    }
-
-    const std::vector<glimac::ShapeVertex>& getVertices() const
-    {
-        return vertices;
-    }
-
-    const tinyobj::attrib_t& getAttrib() const
-    {
-        return attrib;
-    }
-
-    const std::vector<tinyobj::shape_t>& getShapes() const
-    {
-        return shapes;
-    }
-
-    const std::vector<tinyobj::material_t>& getMaterials() const
-    {
-        return materials;
-    }
+  void create_vbo();
+  void create_vao();
+  GLuint get_vbo() { return m_vbo; };
+  GLuint get_vao() { return m_vao; };
 
 private:
-    tinyobj::attrib_t                attrib;
-    std::vector<tinyobj::shape_t>    shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::vector<glimac::ShapeVertex> vertices;
+  GLuint m_vbo;
+  GLuint m_vao;
+  tinyobj::attrib_t m_attrib;
+  std::vector<tinyobj::shape_t> m_shapes;
+  std::vector<tinyobj::material_t> m_materials;
+  std::vector<glimac::ShapeVertex> m_vertices;
 };

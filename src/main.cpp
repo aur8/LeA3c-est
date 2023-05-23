@@ -102,6 +102,7 @@ int main() {
   // binding vbo
   glBindBuffer(GL_ARRAY_BUFFER, vbo_boids);
 
+  //à garder
   const GLuint VERTEX_ATTR_POSITION = 0;
   const GLuint VERTEX_ATTR_NORMAL = 1;
   const GLuint VERTEX_ATTR_TEXCOORDS = 2;

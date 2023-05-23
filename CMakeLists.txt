@@ -38,9 +38,22 @@ function(add_exercise EXERCISE_NAME)
     # ---Link p6 library---
     target_link_libraries(${TARGET_NAME} PRIVATE p6::p6)
 
-    #---add tinyobjloader library
-    add_library(loader tiny_obj_loader.cc)
-    target_link_libraries(src_exe PRIVATE loader)
+    # Ajouter le dépôt Git de Tinyobjloader en tant que dossier externe
+    include(FetchContent)
+    FetchContent_Declare(
+        tinyobjloader
+        GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
+        GIT_TAG v1.0.7
+    )
+
+    # Spécifier le dossier où extraire les fichiers de Tinyobjloader
+    set(FETCHCONTENT_BASE_DIR_EXTERNAL "${CMAKE_CURRENT_SOURCE_DIR}/external")
+
+    # Activer la récupération des fichiers de Tinyobjloader
+    FetchContent_MakeAvailable(tinyobjloader)
+
+    # Inclure les fichiers de Tinyobjloader dans votre projet
+    include_directories(${tinyobjloader_SOURCE_DIR})
 
     # ---Set the output folder---
     set_target_properties(${TARGET_NAME} PROPERTIES
