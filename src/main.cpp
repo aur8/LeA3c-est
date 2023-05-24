@@ -32,6 +32,8 @@ struct Program {
     GLint uLightIntensity;
     GLint uLightPosition2;
     GLint uLightIntensity2;
+    GLint uLightDir;
+    GLint uLightIntensity3;
 
     // object materials
     GLint uKd;
@@ -52,6 +54,8 @@ struct Program {
         uLightIntensity  = glGetUniformLocation(_program.id(), "uLightIntensity1");
         uLightPosition2  = glGetUniformLocation(_program.id(), "uLightPos2");
         uLightIntensity2 = glGetUniformLocation(_program.id(), "uLightIntensity2");
+        uLightDir        = glGetUniformLocation(_program.id(), "uLightDir");
+        uLightIntensity3 = glGetUniformLocation(_program.id(), "uLightIntensity3");
 
         uKd        = glGetUniformLocation(_program.id(), "uKd");
         uKs        = glGetUniformLocation(_program.id(), "uKs");
@@ -86,7 +90,7 @@ int main()
     /* LOADING TEXTURES */
 
     img::Image terre_map = p6::load_image_buffer("assets/textures/paper.jpg");
-    img::Image cube_map  = p6::load_image_buffer("assets/textures/ciel_nuit.png");
+    img::Image cube_map  = p6::load_image_buffer("assets/textures/daysky.jpg");
 
     program._program.use();
 
@@ -116,54 +120,6 @@ int main()
     Model boids_model       = Model("paper.obj");
     Model cube_model        = Model("cube3.obj");
     Model environment_model = Model("environment2.obj");
-
-    // Vertices de la sphere
-    const std::vector<glimac::ShapeVertex> sphere_vertices = glimac::sphere_vertices(1.f, 32, 16);
-
-    // Creation du VBO
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-
-    // Bind du VBO sur la cible
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    // On envoie les données du vbo
-    glBufferData(GL_ARRAY_BUFFER, sphere_vertices.size() * sizeof(glimac::ShapeVertex), sphere_vertices.data(), GL_STATIC_DRAW);
-
-    // Debind du VBO (on evite des modifications involontaires)
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // Creation du VAO;
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-
-    // Bind le VAO
-    glBindVertexArray(vao);
-
-    // On dit à opengl qu'on bind le vao
-    const GLuint VERTEX_ATTR_POSITION   = 0;
-    const GLuint VERTEX_ATTR_NORMAL     = 1;
-    const GLuint VERTEX_ATTR_TEXTCOORDS = 2;
-    glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
-    glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
-    glEnableVertexAttribArray(VERTEX_ATTR_TEXTCOORDS);
-
-    // on indique à openGL où trouver les sommets
-    // bind le vbo
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    // on indique le format de l'attribut de sommet position
-    glVertexAttribPointer(VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex), (const GLvoid*)offsetof(glimac::ShapeVertex, position));
-
-    glVertexAttribPointer(VERTEX_ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex), (const GLvoid*)offsetof(glimac::ShapeVertex, normal));
-
-    glVertexAttribPointer(VERTEX_ATTR_TEXTCOORDS, 2, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex), (const GLvoid*)offsetof(glimac::ShapeVertex, texCoords));
-
-    // debind du VBO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // debind du VAO
-    glBindVertexArray(0);
 
     ///////////////////////////
     // boids 3D avec OPENGL //
@@ -348,25 +304,19 @@ int main()
 
         program._program.use();
 
-        glBindVertexArray(vao);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex_terre); // bind txt moon à la place
-        glUniform1i(program.uTexture, 0);
-
-        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
-        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
-        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
-
-        glDrawArrays(GL_TRIANGLES, 0, sphere_vertices.size());
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-
         glm::vec3 lightPosition     = glm::vec3(0.f, 20.f, 0.f);
         glm::vec3 lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
         glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
 
-        glm::vec3 intensity = glm::vec3(100.f, 100.f, 100.f);
+        glm::vec3 intensity = glm::vec3(100.f, 300.f, 500.f);
         glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
+
+        glm::vec3 lightDir     = glm::vec3(1.f, -1.f, 1.f);
+        glm::vec3 lightViewDir = glm::vec3(viewMatrix * glm::vec4(lightDir, 1.f));
+        glUniform3fv(program.uLightDir, 1, glm::value_ptr(lightViewDir));
+
+        intensity = glm::vec3(1.f, 1.f, 1.f);
+        glUniform3fv(program.uLightIntensity3, 1, glm::value_ptr(intensity));
 
         glBindVertexArray(environment_model.get_vao());
 
@@ -394,8 +344,8 @@ int main()
         glBindTexture(GL_TEXTURE_2D, tex_cube); // bind txt moon à la place
         glUniform1i(program.uTexture, 0);
 
-        MVMatrix = glm::scale(MVMatrix, glm::vec3{5.f});
-        MVMatrix = viewMatrix * MVMatrix;
+        // MVMatrix = glm::scale(MVMatrix, glm::vec3{5.f});
+        // MVMatrix = viewMatrix * MVMatrix;
 
         glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
         glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
@@ -450,11 +400,11 @@ int main()
 
         glDrawArrays(GL_TRIANGLES, 0, character_model.getVertices().size());
 
-        glm::vec3 tViewPoint  = (viewCamera * glm::vec4(0.f, 5.f, 0.f, 0.f));
+        glm::vec3 tViewPoint  = viewCamera * (glm::vec4(character.get_pos(), 1.0f) * glm::vec4(0.f, 1.f, -0.5f, 0.f));
         glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y, tViewPoint.z);
         glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(tLightPoint));
 
-        intensity = glm::vec3(100.f, 0.f, 100.f);
+        intensity = glm::vec3(10.f, 0.f, 10.f);
         glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
 
         glBindVertexArray(0);
