@@ -37,6 +37,9 @@ struct Program {
     GLint uKs;
     GLint uShininess;
 
+    // textures
+    GLint uTexture;
+
     Program()
         : _program{p6::load_shader("shaders/3D.vs.glsl", "shaders/pointLight.fs.glsl")}
     {
@@ -52,6 +55,8 @@ struct Program {
         uKd        = glGetUniformLocation(_program.id(), "uKd");
         uKs        = glGetUniformLocation(_program.id(), "uKs");
         uShininess = glGetUniformLocation(_program.id(), "uShininess");
+
+        uTexture = glGetUniformLocation(_program.id(), "uTexture");
     }
 };
 
@@ -74,6 +79,24 @@ int main()
     bool back_move  = false;
 
     Params params = {};
+    // load shader
+    Program program;
+
+    /* LOADING TEXTURES */
+
+    img::Image terre_map = p6::load_image_buffer("assets/textures/EarthMap.jpg");
+
+    program._program.use();
+
+    GLuint tex_terre = 0;
+    glGenTextures(1, &tex_terre);
+
+    glBindTexture(GL_TEXTURE_2D, tex_terre);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, terre_map.width(), terre_map.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, terre_map.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     /*  LOADING MODELS */
 
@@ -82,12 +105,57 @@ int main()
     Model cube_model        = Model("cube3.obj");
     Model environment_model = Model("environment2.obj");
 
+    // Vertices de la sphere
+    const std::vector<glimac::ShapeVertex> sphere_vertices = glimac::sphere_vertices(1.f, 32, 16);
+
+    // Creation du VBO
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+
+    // Bind du VBO sur la cible
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    // On envoie les données du vbo
+    glBufferData(GL_ARRAY_BUFFER, sphere_vertices.size() * sizeof(glimac::ShapeVertex), sphere_vertices.data(), GL_STATIC_DRAW);
+
+    // Debind du VBO (on evite des modifications involontaires)
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // Creation du VAO;
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+
+    // Bind le VAO
+    glBindVertexArray(vao);
+
+    // On dit à opengl qu'on bind le vao
+    const GLuint VERTEX_ATTR_POSITION   = 0;
+    const GLuint VERTEX_ATTR_NORMAL     = 1;
+    const GLuint VERTEX_ATTR_TEXTCOORDS = 2;
+    glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
+    glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
+    glEnableVertexAttribArray(VERTEX_ATTR_TEXTCOORDS);
+
+    // on indique à openGL où trouver les sommets
+    // bind le vbo
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    // on indique le format de l'attribut de sommet position
+    glVertexAttribPointer(VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex), (const GLvoid*)offsetof(glimac::ShapeVertex, position));
+
+    glVertexAttribPointer(VERTEX_ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex), (const GLvoid*)offsetof(glimac::ShapeVertex, normal));
+
+    glVertexAttribPointer(VERTEX_ATTR_TEXTCOORDS, 2, GL_FLOAT, GL_FALSE, sizeof(glimac::ShapeVertex), (const GLvoid*)offsetof(glimac::ShapeVertex, texCoords));
+
+    // debind du VBO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // debind du VAO
+    glBindVertexArray(0);
+
     ///////////////////////////
     // boids 3D avec OPENGL //
     /////////////////////////
-
-    // load shader
-    Program program;
 
     glEnable(GL_DEPTH_TEST);
 
@@ -268,14 +336,28 @@ int main()
 
         program._program.use();
 
+        glBindVertexArray(vao);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_terre); // bind txt moon à la place
+        glUniform1i(program.uTexture, 0);
+
+        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
+        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
+        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
+
+        glDrawArrays(GL_TRIANGLES, 0, sphere_vertices.size());
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         glm::vec3 lightPosition     = glm::vec3(0.f, 20.f, 0.f);
         glm::vec3 lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
         glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
 
-        glm::vec3 intensity = glm::vec3(500.f, 500.f, 500.f);
+        glm::vec3 intensity = glm::vec3(100.f, 100.f, 100.f);
         glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
 
         glBindVertexArray(environment_model.get_vao());
+
         MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
         MVMatrix = viewMatrix * MVMatrix;
 
@@ -290,7 +372,10 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, environment_model.getVertices().size());
         glBindVertexArray(0);
 
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         glBindVertexArray(cube_model.get_vao());
+
         MVMatrix = glm::scale(MVMatrix, glm::vec3{5.f});
         MVMatrix = viewMatrix * MVMatrix;
 
@@ -356,4 +441,7 @@ int main()
 
     // Should be done last. It starts the infinite loop.
     ctx.start();
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDeleteTextures(1, &tex_terre);
 }

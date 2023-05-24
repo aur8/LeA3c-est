@@ -5,6 +5,7 @@
 
 in vec3 vPosition_vs;
 in vec3 vNormal_vs;
+in vec2 vTextCoords;
 
 // uniform int uNumLights;  // Nombre de lumières
 // uniform vec3 uLightPos[MAX_LIGHTS];  // Tableau de positions des lumières
@@ -19,6 +20,8 @@ uniform vec3 uLightIntensity2;
 uniform vec3 uKd;
 uniform vec3 uKs;
 uniform float uShininess;
+
+uniform sampler2D uTexture;
 
 out vec4 fFragColor;
 
@@ -39,5 +42,14 @@ vec3 blinnPhong(vec3 light_pos, vec3 light_intensity) {
 }
 
 void main() {
-    fFragColor = vec4(blinnPhong(uLightPos1, uLightIntensity1)+ blinnPhong(uLightPos2, uLightIntensity2), 1.0);
+    vec2 fCorrectCoords = vec2(vTextCoords.x, 1-vTextCoords.y);
+
+    vec3 lights = blinnPhong(uLightPos1, uLightIntensity1)+ blinnPhong(uLightPos2, uLightIntensity2);
+    vec3 color_texture = texture(uTexture, fCorrectCoords).rgb;
+
+    
+
+    //fFragColor = vec4( color_texture * lights , 1.0) ;
+
+    fFragColor = texture(uTexture, vTextCoords);
 }
