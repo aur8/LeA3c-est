@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <vector>
 #include "Boid.hpp"
@@ -84,7 +85,8 @@ int main()
 
     /* LOADING TEXTURES */
 
-    img::Image terre_map = p6::load_image_buffer("assets/textures/EarthMap.jpg");
+    img::Image terre_map = p6::load_image_buffer("assets/textures/paper.jpg");
+    img::Image cube_map  = p6::load_image_buffer("assets/textures/ciel_nuit.png");
 
     program._program.use();
 
@@ -93,6 +95,16 @@ int main()
 
     glBindTexture(GL_TEXTURE_2D, tex_terre);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, terre_map.width(), terre_map.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, terre_map.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    GLuint tex_cube = 0;
+    glGenTextures(1, &tex_cube);
+
+    glBindTexture(GL_TEXTURE_2D, tex_cube);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cube_map.width(), cube_map.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, cube_map.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -358,6 +370,10 @@ int main()
 
         glBindVertexArray(environment_model.get_vao());
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_terre); // bind txt moon à la place
+        glUniform1i(program.uTexture, 0);
+
         MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
         MVMatrix = viewMatrix * MVMatrix;
 
@@ -372,9 +388,11 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, environment_model.getVertices().size());
         glBindVertexArray(0);
 
-        glBindTexture(GL_TEXTURE_2D, 0);
-
         glBindVertexArray(cube_model.get_vao());
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_cube); // bind txt moon à la place
+        glUniform1i(program.uTexture, 0);
 
         MVMatrix = glm::scale(MVMatrix, glm::vec3{5.f});
         MVMatrix = viewMatrix * MVMatrix;
@@ -386,11 +404,16 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, cube_model.getVertices().size());
         glBindVertexArray(0);
 
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
         glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
         glUniform1f(program.uShininess, 0.9f);
 
         glBindVertexArray(boids_model.get_vao());
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_terre); // bind txt moon à la place
+        glUniform1i(program.uTexture, 0);
 
         for (auto& boid : boids)
         {
@@ -435,6 +458,7 @@ int main()
         glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
 
         glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         camera.follow_character(character.get_pos());
     };
