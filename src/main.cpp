@@ -181,38 +181,42 @@ int main()
         if (right_rot)
         {
             camera.rotateLeft(-1.f);
+            character.move(0.f, 0.f, 0.f, 0.f, -1.f);
         }
         if (left_rot)
         {
             camera.rotateLeft(1.f);
+            character.move(0.f, 0.f, 0.f, 0.f, 1.f);
         }
         if (up_rot)
         {
             camera.rotateUp(1.f);
+            character.move(0.f, 0.f, 0.f, 1.f, 0.f);
         }
         if (down_rot)
         {
             camera.rotateUp(-1.f);
+            character.move(0.f, 0.f, 0.f, -1.f, 0.f);
         }
         if (left_move)
         {
             // camera.moveLeft(0.5f);
-            character.move(-2.5f, 0., 0.);
+            character.move(-2.5f, 0., 0., 0., 0.);
         }
         if (right_move)
         {
             // camera.moveLeft(-0.5f);
-            character.move(2.5f, 0., 0.);
+            character.move(2.5f, 0., 0., 0., 0.);
         }
         if (front_move)
         {
             // camera.moveFront(-0.5f);
-            character.move(0.f, 0.f, -2.5f);
+            character.move(0.f, 0.f, -2.5f, 0.f, 0.f);
         }
         if (back_move)
         {
             // camera.moveFront(0.5f);
-            character.move(0.f, 0.f, 2.5f);
+            character.move(0.f, 0.f, 2.5f, 0.f, 0.f);
         }
 
         ctx.key_pressed = [&right_rot, &up_rot, &left_rot, &down_rot, &left_move,
@@ -306,10 +310,10 @@ int main()
 
         glm::vec3 lightPosition     = glm::vec3(0.f, 20.f, 0.f);
         glm::vec3 lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
-        glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
+        glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(lightViewPosition));
 
         glm::vec3 intensity = glm::vec3(100.f, 300.f, 500.f);
-        glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
+        glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
 
         glm::vec3 lightDir     = glm::vec3(1.f, -1.f, 1.f);
         glm::vec3 lightViewDir = glm::vec3(viewMatrix * glm::vec4(lightDir, 1.f));
@@ -400,12 +404,16 @@ int main()
 
         glDrawArrays(GL_TRIANGLES, 0, character_model.getVertices().size());
 
-        glm::vec3 tViewPoint  = viewCamera * (glm::vec4(character.get_pos(), 1.0f) * glm::vec4(0.f, 1.f, -0.5f, 0.f));
-        glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y, tViewPoint.z);
-        glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(tLightPoint));
+        lightPosition     = character.get_pos() + glm::vec3(0.f, 5.f, 0.f);
+        lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
+        glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
 
-        intensity = glm::vec3(10.f, 0.f, 10.f);
-        glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
+        // glm::vec3 tViewPoint  = viewCamera * (glm::vec4(character.get_pos(), 1.0f) * glm::vec4(0.f, 1.f, -0.5f, 0.f));
+        // glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y, tViewPoint.z);
+        // glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(tLightPoint));
+
+        intensity = glm::vec3(10.f, 0.f, 20.f);
+        glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
 
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
