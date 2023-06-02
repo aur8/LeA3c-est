@@ -1,10 +1,9 @@
 
-#include <iostream>
-#include <vector>
 #include "Boid.hpp"
 #include "Character.hpp"
 #include "GLFW/glfw3.h"
 #include "Model.hpp"
+#include "Program.hpp"
 #include "glimac/FreeflyCamera.hpp"
 #include "glimac/TrackballCamera.hpp"
 #include "glimac/common.hpp"
@@ -16,414 +15,164 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "img/src/Image.h"
 #include "p6/p6.h"
+#include <iostream>
+#include <vector>
 
-static int boid_number = 100;
+static int boid_number = 200;
 
-struct Program {
-    p6::Shader _program;
+int main() {
+  // Actual app
+  auto ctx = p6::Context{{.title = "Papeterie"}};
+  //   ctx.maximize_window();
 
-    // vertex matrix
-    GLint uMVPMatrix;
-    GLint uMVMatrix;
-    GLint uNormalMatrix;
+  FreeflyCamera camera;
 
-    // light parameters
-    GLint uLightPosition;
-    GLint uLightIntensity;
-    GLint uLightPosition2;
-    GLint uLightIntensity2;
-    GLint uLightDir;
-    GLint uLightIntensity3;
+  bool right_rot = false;
+  bool left_rot = false;
+  bool up_rot = false;
+  bool down_rot = false;
+  bool right_move = false;
+  bool left_move = false;
+  bool front_move = false;
+  bool back_move = false;
 
-    // object materials
-    GLint uKd;
-    GLint uKs;
-    GLint uShininess;
+  Params params = {};
+  // load shader
+  Program program;
 
-    // textures
-    GLint uTexture;
+  GLuint texture_papier = create_texture("assets/textures/paper.jpg");
+  GLuint texture_cube = create_texture("assets/textures/daysky.jpg");
 
-    Program()
-        : _program{p6::load_shader("shaders/3D.vs.glsl", "shaders/pointLight.fs.glsl")}
-    {
-        uMVPMatrix    = glGetUniformLocation(_program.id(), "uMVPMatrix");
-        uMVMatrix     = glGetUniformLocation(_program.id(), "uMVMatrix");
-        uNormalMatrix = glGetUniformLocation(_program.id(), "uNormalMatrix");
+  /*  LOADING MODELS */
 
-        uLightPosition   = glGetUniformLocation(_program.id(), "uLightPos1");
-        uLightIntensity  = glGetUniformLocation(_program.id(), "uLightIntensity1");
-        uLightPosition2  = glGetUniformLocation(_program.id(), "uLightPos2");
-        uLightIntensity2 = glGetUniformLocation(_program.id(), "uLightIntensity2");
-        uLightDir        = glGetUniformLocation(_program.id(), "uLightDir");
-        uLightIntensity3 = glGetUniformLocation(_program.id(), "uLightIntensity3");
+  Model character_model = Model("kaonashi.obj");
+  Model boids_model = Model("paper.obj");
+  Model cube_model = Model("cube3.obj");
+  Model environment_model = Model("environment2.obj");
 
-        uKd        = glGetUniformLocation(_program.id(), "uKd");
-        uKs        = glGetUniformLocation(_program.id(), "uKs");
-        uShininess = glGetUniformLocation(_program.id(), "uShininess");
+  ///////////////////////////
+  // boids 3D avec OPENGL //
+  /////////////////////////
 
-        uTexture = glGetUniformLocation(_program.id(), "uTexture");
-    }
-};
+  glEnable(GL_DEPTH_TEST);
 
-int main()
-{
-    // Actual app
-    auto ctx = p6::Context{{.title = "Papeterie"}};
-    //   ctx.maximize_window();
+  glm::mat4 ProjMatrix =
+      glm::perspective(glm::radians(70.f), ctx.aspect_ratio(), 0.1f, 100.f);
+  glm::mat4 MVMatrix = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
+  glm::mat4 NormalMatrix = glm::transpose(glm::inverse(MVMatrix));
 
-    FreeflyCamera camera;
-    glm::mat4     viewCamera = camera.getViewMatrix();
+  // BOIDS
+  boids_model.create_vbo();
+  boids_model.create_vao();
 
-    bool right_rot  = false;
-    bool left_rot   = false;
-    bool up_rot     = false;
-    bool down_rot   = false;
-    bool right_move = false;
-    bool left_move  = false;
-    bool front_move = false;
-    bool back_move  = false;
+  // Création character
+  Character character;
 
-    Params params = {};
-    // load shader
-    Program program;
+  character_model.create_vbo();
+  character_model.create_vao();
 
-    /* LOADING TEXTURES */
+  // CUBE
+  cube_model.create_vbo();
+  cube_model.create_vao();
 
-    img::Image terre_map = p6::load_image_buffer("assets/textures/paper.jpg");
-    img::Image cube_map  = p6::load_image_buffer("assets/textures/daysky.jpg");
+  // ENVIRONMENT
+
+  environment_model.create_vbo();
+  environment_model.create_vao();
+
+  /* BOIDS TAB */
+  std::vector<Boid> boids(boid_number);
+
+  // Declare your infinite update loop.
+  ctx.update = [&]() {
+    // Clear the background with a fading effect
+    ctx.use_stroke = false;
+    ctx.background({0.2f, 0.1f, 0.3f});
 
     program._program.use();
 
-    GLuint tex_terre = 0;
-    glGenTextures(1, &tex_terre);
+    ImGui::Begin("Test");
+    ImGui::SliderFloat("Cohesion Magnitude", &params.cohesion_magnitude, 0.f,
+                       1.f);
+    ImGui::SliderFloat("Aligment Magnitude", &params.alignment_magnitude, 0.f,
+                       1.f);
+    ImGui::SliderFloat("Separation Magnitude", &params.separation_magnitude,
+                       0.f, 1.f);
+    ImGui::SliderFloat("Distance with neighbors", &params.distance_max, 0.f,
+                       1.f);
+    ImGui::End();
 
-    glBindTexture(GL_TEXTURE_2D, tex_terre);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, terre_map.width(), terre_map.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, terre_map.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // EVENEMENT CAMERA & ARPENTEUR
+    handle_movement(character, camera, right_rot, up_rot, left_rot, down_rot,
+                    left_move, right_move, front_move, back_move, ctx);
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glm::mat4 viewMatrix = camera.getViewMatrix();
 
-    GLuint tex_cube = 0;
-    glGenTextures(1, &tex_cube);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBindTexture(GL_TEXTURE_2D, tex_cube);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cube_map.width(), cube_map.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, cube_map.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // FIXED LIGHT
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    program._program.use();
 
-    /*  LOADING MODELS */
+    glm::vec3 lightPosition = glm::vec3(0.f, 20.f, 0.f);
+    glm::vec3 lightViewPosition =
+        glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
+    glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(lightViewPosition));
 
-    Model character_model   = Model("kaonashi.obj");
-    Model boids_model       = Model("paper.obj");
-    Model cube_model        = Model("cube3.obj");
-    Model environment_model = Model("environment2.obj");
+    glm::vec3 intensity = glm::vec3(100.f, 300.f, 500.f);
+    glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
 
-    ///////////////////////////
-    // boids 3D avec OPENGL //
-    /////////////////////////
+    glm::vec3 lightDir = glm::vec3(1.f, -1.f, 1.f);
+    glm::vec3 lightViewDir = glm::vec3(viewMatrix * glm::vec4(lightDir, 1.f));
+    glUniform3fv(program.uLightDir, 1, glm::value_ptr(lightViewDir));
 
-    glEnable(GL_DEPTH_TEST);
+    intensity = glm::vec3(1.f, 1.f, 1.f);
+    glUniform3fv(program.uLightIntensity3, 1, glm::value_ptr(intensity));
 
-    glm::mat4 ProjMatrix =
-        glm::perspective(glm::radians(70.f), ctx.aspect_ratio(), 0.1f, 100.f);
-    glm::mat4 MVMatrix     = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
-    glm::mat4 NormalMatrix = glm::transpose(glm::inverse(MVMatrix));
-
-    // BOIDS
-    boids_model.create_vbo();
-    boids_model.create_vao();
-
-    // Création character
-    Character character;
-
-    character_model.create_vbo();
-    character_model.create_vao();
-
-    // CUBE
-    cube_model.create_vbo();
-    cube_model.create_vao();
+    glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
+    glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
+    glUniform1f(program.uShininess, 0.9f);
 
     // ENVIRONMENT
 
-    environment_model.create_vbo();
-    environment_model.create_vao();
+    environment_model.draw_model(viewMatrix, program, ctx, texture_papier);
 
-    std::vector<glm::vec3> positions;
-    for (int i = 0; i < 32; ++i)
-    {
-        positions.push_back(glm::sphericalRand(2.0f));
+    // CUBE
+
+    cube_model.draw_model(viewMatrix, program, ctx, texture_cube);
+
+    // BOIDS
+
+    for (auto &boid : boids) {
+      boid.draw_boid(viewMatrix, program, ctx, texture_papier, boids_model);
+      boid.update(ctx.delta_time(), 10, boids, params);
     }
 
-    /* BOIDS TAB */
-    std::vector<Boid> boids(boid_number);
+    // CHARACTER
 
-    // Declare your infinite update loop.
-    ctx.update = [&]() {
-        // Clear the background with a fading effect
-        ctx.use_stroke = false;
-        ctx.background({0.2f, 0.1f, 0.3f});
+    character.draw_character(viewMatrix, program, ctx, texture_papier,
+                             character_model);
 
-        program._program.use();
+    lightPosition = character.get_pos() + glm::vec3(0.f, 5.f, 0.f);
+    lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
+    glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
 
-        ImGui::Begin("Test");
-        ImGui::SliderFloat("Cohesion Magnitude", &params.cohesion_magnitude, 0.f, 1.f);
-        ImGui::SliderFloat("Aligment Magnitude", &params.alignment_magnitude, 0.f, 1.f);
-        ImGui::SliderFloat("Separation Magnitude", &params.separation_magnitude, 0.f, 1.f);
-        ImGui::SliderFloat("Distance with neighbors", &params.distance_max, 0.f, 1.f);
-        ImGui::End();
+    // glm::vec3 tViewPoint  = viewCamera *
+    // (glm::vec4(character.get_pos(), 1.0f) * glm::vec4(0.f, 1.f, -0.5f, 0.f));
+    // glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y,
+    // tViewPoint.z); glUniform3fv(program.uLightPosition2, 1,
+    // glm::value_ptr(tLightPoint));
 
-        // EVENEMENT CAMERA
+    intensity = glm::vec3(10.f, 0.f, 20.f);
+    glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
 
-        // camera
-        if (right_rot)
-        {
-            camera.rotateLeft(-1.f);
-            character.move(0.f, 0.f, 0.f, 0.f, -1.f);
-        }
-        if (left_rot)
-        {
-            camera.rotateLeft(1.f);
-            character.move(0.f, 0.f, 0.f, 0.f, 1.f);
-        }
-        if (up_rot)
-        {
-            camera.rotateUp(1.f);
-            character.move(0.f, 0.f, 0.f, 1.f, 0.f);
-        }
-        if (down_rot)
-        {
-            camera.rotateUp(-1.f);
-            character.move(0.f, 0.f, 0.f, -1.f, 0.f);
-        }
-        if (left_move)
-        {
-            // camera.moveLeft(0.5f);
-            character.move(-2.5f, 0., 0., 0., 0.);
-        }
-        if (right_move)
-        {
-            // camera.moveLeft(-0.5f);
-            character.move(2.5f, 0., 0., 0., 0.);
-        }
-        if (front_move)
-        {
-            // camera.moveFront(-0.5f);
-            character.move(0.f, 0.f, -2.5f, 0.f, 0.f);
-        }
-        if (back_move)
-        {
-            // camera.moveFront(0.5f);
-            character.move(0.f, 0.f, 2.5f, 0.f, 0.f);
-        }
+    camera.follow_character(character.get_pos());
+  };
 
-        ctx.key_pressed = [&right_rot, &up_rot, &left_rot, &down_rot, &left_move,
-                           &right_move, &front_move, &back_move](p6::Key key) {
-            if (key.physical == GLFW_KEY_D)
-            {
-                right_rot = true;
-            }
-            if (key.physical == GLFW_KEY_A)
-            {
-                left_rot = true;
-            }
-            if (key.physical == GLFW_KEY_W)
-            {
-                up_rot = true;
-            }
-            if (key.physical == GLFW_KEY_S)
-            {
-                down_rot = true;
-            }
-            if (key.physical == GLFW_KEY_LEFT)
-            {
-                left_move = true;
-            }
-            if (key.physical == GLFW_KEY_RIGHT)
-            {
-                right_move = true;
-            }
-            if (key.physical == GLFW_KEY_UP)
-            {
-                front_move = true;
-            }
-            if (key.physical == GLFW_KEY_DOWN)
-            {
-                back_move = true;
-            }
-        };
-
-        ctx.key_released = [&right_rot, &up_rot, &left_rot, &down_rot, &left_move,
-                            &right_move, &front_move, &back_move](p6::Key key) {
-            if (key.physical == GLFW_KEY_D)
-            {
-                right_rot = false;
-            }
-            if (key.physical == GLFW_KEY_A)
-            {
-                left_rot = false;
-            }
-            if (key.physical == GLFW_KEY_W)
-            {
-                up_rot = false;
-            }
-            if (key.physical == GLFW_KEY_S)
-            {
-                down_rot = false;
-            }
-            if (key.physical == GLFW_KEY_LEFT)
-            {
-                left_move = false;
-            }
-            if (key.physical == GLFW_KEY_RIGHT)
-            {
-                right_move = false;
-            }
-            if (key.physical == GLFW_KEY_UP)
-            {
-                front_move = false;
-            }
-            if (key.physical == GLFW_KEY_DOWN)
-            {
-                back_move = false;
-            }
-        };
-
-        ctx.mouse_dragged = [&camera](const p6::MouseDrag& button) {
-            camera.rotateLeft(button.delta.x * 5);
-            camera.rotateUp(-button.delta.y * 5);
-        };
-
-        ctx.mouse_scrolled = [&](p6::MouseScroll scroll) {
-            camera.moveFront(-scroll.dy);
-        };
-
-        glm::mat4 viewMatrix = camera.getViewMatrix();
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // FIXED LIGHT
-
-        program._program.use();
-
-        glm::vec3 lightPosition     = glm::vec3(0.f, 20.f, 0.f);
-        glm::vec3 lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
-        glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(lightViewPosition));
-
-        glm::vec3 intensity = glm::vec3(100.f, 300.f, 500.f);
-        glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
-
-        glm::vec3 lightDir     = glm::vec3(1.f, -1.f, 1.f);
-        glm::vec3 lightViewDir = glm::vec3(viewMatrix * glm::vec4(lightDir, 1.f));
-        glUniform3fv(program.uLightDir, 1, glm::value_ptr(lightViewDir));
-
-        intensity = glm::vec3(1.f, 1.f, 1.f);
-        glUniform3fv(program.uLightIntensity3, 1, glm::value_ptr(intensity));
-
-        glBindVertexArray(environment_model.get_vao());
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex_terre); // bind txt moon à la place
-        glUniform1i(program.uTexture, 0);
-
-        MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
-        MVMatrix = viewMatrix * MVMatrix;
-
-        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
-        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
-        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
-
-        glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
-        glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
-        glUniform1f(program.uShininess, 0.9f);
-
-        glDrawArrays(GL_TRIANGLES, 0, environment_model.getVertices().size());
-        glBindVertexArray(0);
-
-        glBindVertexArray(cube_model.get_vao());
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex_cube); // bind txt moon à la place
-        glUniform1i(program.uTexture, 0);
-
-        // MVMatrix = glm::scale(MVMatrix, glm::vec3{5.f});
-        // MVMatrix = viewMatrix * MVMatrix;
-
-        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
-        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
-        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
-
-        glDrawArrays(GL_TRIANGLES, 0, cube_model.getVertices().size());
-        glBindVertexArray(0);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
-        glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
-        glUniform1f(program.uShininess, 0.9f);
-
-        glBindVertexArray(boids_model.get_vao());
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, tex_terre); // bind txt moon à la place
-        glUniform1i(program.uTexture, 0);
-
-        for (auto& boid : boids)
-        {
-            MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f}); // Translation
-            MVMatrix = glm::translate(
-                MVMatrix,
-                boid.get_pos()
-            ); // Translation * Rotation * Translation
-            MVMatrix = glm::scale(
-                MVMatrix,
-                glm::vec3{0.1f}
-            ); // Translation * Rotation * Translation * Scale
-            MVMatrix = viewMatrix * MVMatrix;
-
-            glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
-            glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
-            glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
-
-            glDrawArrays(GL_TRIANGLES, 0, boids_model.getVertices().size());
-
-            boid.update(ctx.delta_time(), 5, boids, params);
-        }
-        glBindVertexArray(0);
-
-        glBindVertexArray(character_model.get_vao());
-        MVMatrix = glm::translate(glm::mat4{1.f}, {0.f, 0.f, 0.f});
-        MVMatrix = glm::translate(MVMatrix, character.get_pos());
-        MVMatrix = glm::scale(MVMatrix, glm::vec3{0.5f});
-        MVMatrix = viewMatrix * MVMatrix;
-
-        glUniformMatrix4fv(program.uMVPMatrix, 1, GL_FALSE, glm::value_ptr(ProjMatrix * MVMatrix));
-        glUniformMatrix4fv(program.uMVMatrix, 1, GL_FALSE, glm::value_ptr(MVMatrix));
-        glUniformMatrix4fv(program.uNormalMatrix, 1, GL_FALSE, glm::value_ptr(NormalMatrix));
-
-        glDrawArrays(GL_TRIANGLES, 0, character_model.getVertices().size());
-
-        lightPosition     = character.get_pos() + glm::vec3(0.f, 5.f, 0.f);
-        lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
-        glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
-
-        // glm::vec3 tViewPoint  = viewCamera * (glm::vec4(character.get_pos(), 1.0f) * glm::vec4(0.f, 1.f, -0.5f, 0.f));
-        // glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y, tViewPoint.z);
-        // glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(tLightPoint));
-
-        intensity = glm::vec3(10.f, 0.f, 20.f);
-        glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
-
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        camera.follow_character(character.get_pos());
-    };
-
-    // Should be done last. It starts the infinite loop.
-    ctx.start();
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDeleteTextures(1, &tex_terre);
+  // Should be done last. It starts the infinite loop.
+  ctx.start();
+  glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+  glDeleteTextures(1, &texture_papier);
+  glDeleteTextures(1, &texture_cube);
 }

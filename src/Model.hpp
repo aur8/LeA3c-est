@@ -1,7 +1,10 @@
 #pragma once
 
+#include "Program.hpp"
 #include "glimac/common.hpp"
 #include "glm/fwd.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "img/src/Image.h"
 #include "p6/p6.h"
 #include "tiny_obj_loader.h"
 #include <iostream>
@@ -38,6 +41,8 @@ public:
   void create_vao();
   GLuint get_vbo() { return m_vbo; };
   GLuint get_vao() { return m_vao; };
+  void draw_model(glm::mat4 viewMatrix, Program &program, p6::Context &ctx,
+                  GLuint &texture);
 
 private:
   GLuint m_vbo;
@@ -47,3 +52,5 @@ private:
   std::vector<tinyobj::material_t> m_materials;
   std::vector<glimac::ShapeVertex> m_vertices;
 };
+
+GLuint create_texture(std::string path);
