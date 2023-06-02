@@ -2,10 +2,10 @@
 #include "Boid.hpp"
 #include "Character.hpp"
 #include "GLFW/glfw3.h"
+#include "Light.hpp"
 #include "Model.hpp"
 #include "Program.hpp"
 #include "glimac/FreeflyCamera.hpp"
-#include "glimac/TrackballCamera.hpp"
 #include "glimac/common.hpp"
 #include "glimac/sphere_vertices.hpp"
 #include "glm/ext/quaternion_geometric.hpp"
@@ -37,8 +37,10 @@ int main() {
   bool back_move = false;
 
   Params params = {};
-  // load shader
+  /* load shader */
   Program program;
+
+  /* Load texture */
 
   GLuint texture_papier = create_texture("assets/textures/paper.jpg");
   GLuint texture_cube = create_texture("assets/textures/daysky.jpg");
@@ -56,32 +58,36 @@ int main() {
 
   glEnable(GL_DEPTH_TEST);
 
-  glm::mat4 ProjMatrix =
-      glm::perspective(glm::radians(70.f), ctx.aspect_ratio(), 0.1f, 100.f);
-  glm::mat4 MVMatrix = glm::translate(glm::mat4(1), glm::vec3(0, 0, -5));
-  glm::mat4 NormalMatrix = glm::transpose(glm::inverse(MVMatrix));
-
-  // BOIDS
+  /* BOIDS */
   boids_model.create_vbo();
   boids_model.create_vao();
 
-  // Création character
+  /* Création character */
   Character character;
 
   character_model.create_vbo();
   character_model.create_vao();
 
-  // CUBE
+  /* CUBE */
   cube_model.create_vbo();
   cube_model.create_vao();
 
-  // ENVIRONMENT
+  /* ENVIRONMENT */
 
   environment_model.create_vbo();
   environment_model.create_vao();
 
   /* BOIDS TAB */
   std::vector<Boid> boids(boid_number);
+
+  /* LIGHT */
+
+  Point_light light_gate(glm::vec3(0.f, 20.f, 0.f),
+                         glm::vec3(100.f, 300.f, 500.f), program._program);
+  Point_light light_character(character.get_pos() + glm::vec3(0.f, 5.f, 0.f),
+                              glm::vec3(10.f, 0.f, 20.f), program._program);
+  Dir_light ambient(glm::vec3(1.f, -1.f, 1.f), glm::vec3(1.f, 1.f, 1.f),
+                    program._program);
 
   // Declare your infinite update loop.
   ctx.update = [&]() {
@@ -90,6 +96,8 @@ int main() {
     ctx.background({0.2f, 0.1f, 0.3f});
 
     program._program.use();
+
+    /* IMGUI */
 
     ImGui::Begin("Test");
     ImGui::SliderFloat("Cohesion Magnitude", &params.cohesion_magnitude, 0.f,
@@ -112,26 +120,9 @@ int main() {
 
     // FIXED LIGHT
 
-    program._program.use();
+    draw_point_light(light_gate, viewMatrix, 2);
 
-    glm::vec3 lightPosition = glm::vec3(0.f, 20.f, 0.f);
-    glm::vec3 lightViewPosition =
-        glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
-    glUniform3fv(program.uLightPosition2, 1, glm::value_ptr(lightViewPosition));
-
-    glm::vec3 intensity = glm::vec3(100.f, 300.f, 500.f);
-    glUniform3fv(program.uLightIntensity2, 1, glm::value_ptr(intensity));
-
-    glm::vec3 lightDir = glm::vec3(1.f, -1.f, 1.f);
-    glm::vec3 lightViewDir = glm::vec3(viewMatrix * glm::vec4(lightDir, 1.f));
-    glUniform3fv(program.uLightDir, 1, glm::value_ptr(lightViewDir));
-
-    intensity = glm::vec3(1.f, 1.f, 1.f);
-    glUniform3fv(program.uLightIntensity3, 1, glm::value_ptr(intensity));
-
-    glUniform3fv(program.uKd, 1, glm::value_ptr(glm::vec3(1.5f, 0.5f, 0.3f)));
-    glUniform3fv(program.uKs, 1, glm::value_ptr(glm::vec3(1.5f, 0.9f, 0.6f)));
-    glUniform1f(program.uShininess, 0.9f);
+    draw_dir_light(ambient, viewMatrix);
 
     // ENVIRONMENT
 
@@ -153,18 +144,8 @@ int main() {
     character.draw_character(viewMatrix, program, ctx, texture_papier,
                              character_model);
 
-    lightPosition = character.get_pos() + glm::vec3(0.f, 5.f, 0.f);
-    lightViewPosition = glm::vec3(viewMatrix * glm::vec4(lightPosition, 1.f));
-    glUniform3fv(program.uLightPosition, 1, glm::value_ptr(lightViewPosition));
-
-    // glm::vec3 tViewPoint  = viewCamera *
-    // (glm::vec4(character.get_pos(), 1.0f) * glm::vec4(0.f, 1.f, -0.5f, 0.f));
-    // glm::vec3 tLightPoint = glm::vec3(tViewPoint.x, tViewPoint.y,
-    // tViewPoint.z); glUniform3fv(program.uLightPosition2, 1,
-    // glm::value_ptr(tLightPoint));
-
-    intensity = glm::vec3(10.f, 0.f, 20.f);
-    glUniform3fv(program.uLightIntensity, 1, glm::value_ptr(intensity));
+    light_character.m_position = character.get_pos() + glm::vec3(0.f, 5.f, 0.f);
+    draw_point_light(light_character, viewMatrix, 1);
 
     camera.follow_character(character.get_pos());
   };

@@ -19,9 +19,9 @@ uniform vec3 uLightIntensity1;
 uniform vec3 uLightIntensity2;
 uniform vec3 uLightIntensity3;
 
-uniform vec3 uKd;
-uniform vec3 uKs;
-uniform float uShininess;
+vec3 Kd;
+vec3 Ks;
+float Shininess;
 
 uniform sampler2D uTexture;
 
@@ -37,7 +37,7 @@ vec3 blinnPhong(vec3 light_pos, vec3 light_intensity) {
         vec3 wi = normalize(light_pos - vPosition_vs);
         vec3 halfVector = normalize(w0 + wi);
 
-        result += Li * (uKd * dot(wi, N) + uKs * pow(dot(halfVector, N), uShininess));
+        result += Li * (Kd * dot(wi, N) + Ks * pow(dot(halfVector, N), Shininess));
     
 
     return result;
@@ -51,18 +51,21 @@ vec3 blinnPhong_dir(vec3 light_dir, vec3 light_intensity){
     vec3 halfVector = (w0+wi)/2.f;
 
     //la formule imbuvable du tp
-    return Li * ( uKd * dot(wi,N) + uKs * pow(dot(halfVector, N), uShininess));
+    return Li * ( Kd * dot(wi,N) + Ks * pow(dot(halfVector, N), Shininess));
     // return Li*(uKd*max(dot(wi, N), 0.) + uKs*max(pow(dot(halfVector, N), 0.), uShininess));
 }
 
 void main() {
+    Kd = vec3(1.5f, 0.5f, 0.3f);
+    Ks = vec3(1.5f, 0.9f, 0.6f);
+    Shininess = 0.9f;
+
     vec2 fCorrectCoords = vec2(vTextCoords.x, 1-vTextCoords.y);
 
     vec3 lights = blinnPhong(uLightPos1, uLightIntensity1)+ blinnPhong(uLightPos2, uLightIntensity2) + blinnPhong_dir(uLightDir, uLightIntensity3);
     vec3 color_texture = texture(uTexture, fCorrectCoords).rgb;
 
     
-
     fFragColor = vec4( color_texture * lights , 1.0) ;
 
     //fFragColor = texture(uTexture, vTextCoords);
